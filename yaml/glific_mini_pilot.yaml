@@ -1,0 +1,38 @@
+dry_run: False
+simulate_responses: False
+simulate_participants: False
+
+storage:
+  experiment: glific_mini_pilot
+  local: False
+  cloud: True
+
+dqn:
+  criterion: MSELoss
+  optimizer: SGD
+  train_lr: 1e-3
+  warmup_lr: 1e-1
+  train_iters: 1
+  warmup_iters: 1000
+  num_samples: 1000
+  sync_steps: 2
+  epsilon: .9
+  epsilon_decay: .9
+  gamma: .30
+
+  model:
+    input_shape: 8
+    hidden_shape: 128
+    output_shape: 1596
+    hidden_layers: 1
+    hidden_activation: LeakyReLU
+    hidden_activation_kw:
+      negative_slope: 0.2
+
+  memory:
+    capacity: 50
+    batch_size: 5
+
+  convergence:
+    reps: 50
+    min_loss: .0001
