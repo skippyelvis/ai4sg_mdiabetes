@@ -59,7 +59,7 @@ class Model(nn.Module):
     # simple linear model as basis for dqn
 
     def __init__(self, input_shape=8, hidden_shape=128, output_shape=1596, hidden_layers=2,
-            hidden_activation='LeakyReLU', hidden_activation_kw={'negative_slope': 0.2}, **kw):
+            hidden_activation='LeakyReLU', hidden_activation_kw={'negative_slope': 0.2}):
         super().__init__()
         self.dev = DEVICE 
         self.input_shape = input_shape
@@ -129,7 +129,7 @@ class DQN:
     # dqn agent
 
     def __init__(self, criterion='MSELoss', optimizer='SGD', optimizer_kw={}, train_lr=1e-7, 
-            warmup_lr=1e-1, train_iters=1, warmup_iters=100000, num_samples=200, 
+            warmup_lr=1e-1, warmup_iters=100000, num_samples=200, 
             sync_steps=2, epsilon=0.9, epsilon_decay=0.9, gamma=.05, model={}, memory={}, convergence={}):
         self.dev = DEVICE
         self.criterion = criterion
@@ -137,7 +137,6 @@ class DQN:
         self.optimizer_kw = optimizer_kw
         self.train_lr = train_lr
         self.warmup_lr = warmup_lr
-        self.train_iters = train_iters
         self.warmup_iters = warmup_iters
         self.num_samples = num_samples
         self.sync_steps = sync_steps
@@ -147,14 +146,14 @@ class DQN:
         self.policy = Model(**model).to(self.dev)
         self.target = Model(**model).to(self.dev)
         self.memory = Memory(**memory)
-        self.convergence = lambda: ConvergenceCheck(**convergence)
+        self.convergence = convergence
 
     def weekly_training_update(self, transitions, run_index):
         self.memory.add(transitions)
         lossh = torch.tensor([])
         if self.memory.N == 0:
             return lossh
-        check = self.convergence()
+        check = ConvergenceCheck(self.convergence['training'], self.convergence['min_loss'])
         DQNLogger("Starting training", btbrk=None)
         optimizer = self.new_optimizer(self.train_lr)
         for ns in range(self.num_samples):
@@ -166,7 +165,7 @@ class DQN:
                 lv = sample_lossh[-1].item()
                 DQNLogger(" #", ns, f"/{self.num_samples}, Loss:", lv, topbrk=None, btbrk=None)
             if check(sample_lossh[-1]):
-                DQNLogger("training convergence check passed", topbrk=None, btbrk=None)
+                DQNLogger("training convergence check passed @", ns, topbrk=None, btbrk=None)
                 break
         self.epsilon = self.epsilon * self.epsilon_decay
         self.sync_net_weights(run_index)
@@ -197,7 +196,7 @@ class DQN:
         lossh = []
         optimizer = self.new_optimizer(self.warmup_lr)
         criterion = self.new_criterion()
-        check = self.convergence()
+        check = ConvergenceCheck(self.convergence['warmup'], self.convergence['min_loss'])
         DQNLogger("Starting warmup", btbrk=None)
         for warmi in range(self.warmup_iters):
             optimizer.zero_grad()
@@ -211,7 +210,7 @@ class DQN:
             if warmi % (self.warmup_iters//10) == 0:
                 DQNLogger(" #", warmi, ", Loss:", loss.item(), topbrk=None, btbrk=None)
             if check(loss):
-                DQNLogger("Warmup convergence check passed", topbrk=None, btbrk=None)
+                DQNLogger("Warmup convergence check passed @", warmi, topbrk=None, btbrk=None)
                 break
         self.sync_net_weights(0)
         del optimizer

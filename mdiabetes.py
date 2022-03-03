@@ -225,9 +225,9 @@ class MDiabetes:
             file.append([row_id, m1, q1, m2, q2])
             if self.simulate_responses:
                 (s1, s2) = MessagesH.sid_lookup(p)
-                r1 = torch.ceil(3 - states[i][s1])
-                r2 = torch.ceil(3 - states[i][s2])
-                simul_resp.append([row_id, q1, 3, q2, 3])
+                r1 = torch.randint(2, 3, (1,))[0].item()
+                r2 = torch.randint(2, 3, (1,))[0].item()
+                simul_resp.append([row_id, q1, r1, q2, r1])
         if self.simulate_responses and not self.dry_run:
             self.stor["responses"].save_data(simul_resp, self.run_index) 
         return file
