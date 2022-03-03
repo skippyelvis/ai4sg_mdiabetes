@@ -32,7 +32,7 @@
 # Setup to Run Experiments
 
 ### Python requirements
-- install the required packages from `requirements.conda`
+- install the required packages from `environment.yaml`
 - optionally, skip this step and install packages as necessary when you see error messages like `torch: no module found`
 
 ### GCS setup
@@ -52,7 +52,7 @@
     - `MDIABETED_GCS_BUCKET_PUBLIC`: name of public bucket to store all other files
 - you need do the following
     - clone the repo
-    - rename `.env_sample` to `.env`: `project/ai4sg_mdiabetes$ cp .env_sample .env`
+    - rename `.env_sample` to `.env`: `ai4sg_mdiabetes$ cp .env_sample .env`
     - open `.env` and replace the bucket names with their real world names
 
 ### yaml input file
@@ -68,11 +68,11 @@
 # Running Experiments
 - confirm you have cloned the repo, install requirements, setup GCS, and made a `yaml` file
 - to run a given experiment (specified by yaml) for 1 week:
-    - `project/ai4sg_mdiabetes$ python3 mdiabetes.py -f input.yaml`
+    - `$ python3 mdiabetes.py -f input.yaml`
 - to run a given experiment (specified by yaml) for 5 weeks:
-    - `project/ai4sg_mdiabetes$ python3 mdiabetes.py -f input.yaml -n 5`
+    - `$ python3 mdiabetes.py -f input.yaml -n 5`
 - if you want to continue this experiment for another 2 weeks, run
-    - `project/ai4sg_mdiabetes$ python3 mdiabetes.py -f input.yaml -n 2`
+    - `$ python3 mdiabetes.py -f input.yaml -n 2`
 - to run multiple different experiments at the same time
     - `$ python3 mdiabetes.py -f input1.yaml -n 3` will simulate 3 weeks of input1
     - `$ python3 mdiabetes.py -f input2.yaml -n 4` will simulate 4 weeks of input2
@@ -80,5 +80,5 @@
         data for both will be saved 
 
 # Cleaning up experiments:
-- locally: `$rm -rf local_storage/storage_name`
+- locally: `$ rm -rf local_storage/storage_name`
 - cloud: `$ python3 storage.py -c -f storage_name`
