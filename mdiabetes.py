@@ -138,8 +138,7 @@ class MDiabetes:
                 sids = MessagesH.sid_lookup(col)
                 for sid in sids:
                     val += StatesH.state_max - states[row][sid-1]
-                val /= (len(sids) ** 1/2)
-                targets[row,col] = val
+                targets[row,col] = val ** (1/2)
         return self.agent.train_warmup(states, targets)
 
     def weekly_masks(self, timeline):
@@ -222,10 +221,10 @@ class MDiabetes:
             c, p = current_actions[i][1], previous_actions[i][1]
             row_id = current_actions[i][0].long().item()
             (m1, m2) = MessagesH.mid_lookup(c)
-            (s1, s2) = MessagesH.sid_lookup(p)
             (q1, q2) = QuestionsH.random_questions(MessagesH.sid_lookup(p))
             file.append([row_id, m1, q1, m2, q2])
             if self.simulate_responses:
+                (s1, s2) = MessagesH.sid_lookup(p)
                 r1 = torch.ceil(3 - states[i][s1])
                 r2 = torch.ceil(3 - states[i][s2])
                 simul_resp.append([row_id, q1, 3, q2, 3])

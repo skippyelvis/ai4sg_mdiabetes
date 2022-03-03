@@ -201,6 +201,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", help="storage folder", default="preprod")
     parser.add_argument("-c", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("-y", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("-t", action=argparse.BooleanOptionalAction, default=False)
     args = parser.parse_args()
     print(args)
@@ -208,11 +209,12 @@ if __name__ == "__main__":
     Stor = make_storage_group(args.f)
 
     # for testing, remove all stored files
-    if args.c and input("clean gcs? (y/n) >  ").lower() == "y":
-        for k, v in Stor.items():
-            if k in ["batches", "responses", "outfiles"]:
-                continue
-            v.delete_files()
+    if args.c:
+        if args.y or input("clean gcs? (y/n) >  ").lower() == "y":
+            for k, v in Stor.items():
+                if k in ["batches", "responses", "outfiles"]:
+                    continue
+                v.delete_files()
 
     # for testing, upload sample file to all buckets
     if args.t:

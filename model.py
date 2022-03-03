@@ -3,7 +3,7 @@ from torch import nn, optim
 import numpy as np
 from logger import DQNLogger
 
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+DEVICE = torch.device('cpu')
 
 class Memory:
     # memory object for holding most recent transitions
@@ -169,7 +169,7 @@ class DQN:
                 DQNLogger("training convergence check passed", topbrk=None, btbrk=None)
                 break
         self.epsilon = self.epsilon * self.epsilon_decay
-        self.sync_net_weights(run_index-1)
+        self.sync_net_weights(run_index)
         DQNLogger("Done training", topbrk=None)
         return lossh
 
@@ -272,5 +272,4 @@ class DQN:
             DQNLogger("loaded from gcs", topbrk=None)
         else:
             DQNLogger("using randomly initialized models", topbrk=None)
-
 

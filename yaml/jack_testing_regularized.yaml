@@ -5,7 +5,7 @@ N_simul_batch_1: 256
 N_simul_batch_2: 64
 
 storage:
-  experiment: jack_testing
+  experiment: jack_testing_regularized
   local: True
   cloud: True
 
@@ -14,11 +14,12 @@ dqn:
   optimizer: SGD
   optimizer_kw:
     momentum: 0.9
-  train_lr: .001
-  warmup_lr: .05
+    weight_decay: 1e-4
+  train_lr: .0001
+  warmup_lr: .0005
   train_iters: 1
-  warmup_iters: 1000
-  num_samples: 100
+  warmup_iters: 20000
+  num_samples: 300
   sync_steps: 2
   epsilon: .8
   epsilon_decay: .9
