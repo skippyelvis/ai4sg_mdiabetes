@@ -1,0 +1,43 @@
+dry_run: False
+simulate_responses: True
+simulate_participants: True
+N_simul_batch_1: 256
+N_simul_batch_2: 64
+
+storage:
+  experiment: jack_testing
+  local: True
+  cloud: True
+
+dqn:
+  criterion: MSELoss
+  optimizer: SGD
+  optimizer_kw:
+    momentum: 0.9
+    weight_decay: 1e-4
+  train_lr: .001
+  warmup_lr: .001
+  train_iters: 1
+  warmup_iters: 1000
+  num_samples: 500
+  sync_steps: 2
+  epsilon: .8
+  epsilon_decay: .9
+  gamma: .80
+
+  model:
+    input_shape: 8
+    hidden_shape: 128
+    output_shape: 1596
+    hidden_layers: 1
+    hidden_activation: LeakyReLU
+    hidden_activation_kw:
+      negative_slope: 0.2
+
+  memory:
+    capacity: 512
+    batch_size: 256
+
+  convergence:
+    reps: 50
+    min_loss: .00001

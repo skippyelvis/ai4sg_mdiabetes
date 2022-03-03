@@ -153,8 +153,8 @@ def make_storage_group(experiment="preprod", local=LOCAL, cloud=CLOUD):
             CLOUD_STORAGE_FOLDER_TESTING,   # top-level folder in bucket
             LOCAL_STORAGE_FOLDER,           # top-level local folder
             [experiment, experiment], # middle-level folder on [local, cloud]
-            ["states", "states"],     # lowest-level folder on [loca, cloud]
-            "",      # prefix for filenames, ex "batch_"
+            ["states", "states"],     # lowest-level folder on [local, cloud]
+            "",      # prefix for filenames, ex "batch", postfixed with "_"
             ".pt",   # file extension to save as
             0        # filename offset
     )

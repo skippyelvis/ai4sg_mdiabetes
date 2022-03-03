@@ -34,10 +34,10 @@ class MDiabetes:
         self.run_index = -5
 
     def main(self):
-        self.agent = DQN(**self.config["dqn"])
-        self.agent.load_disk_repr(self.stor["dqns"], self.run_index-1)
         self.run_index = self.stor["states"].count_files() + 1
         MainLogger("Starting week #", self.run_index, self.simulate_responses, self.simulate_participants)
+        self.agent = DQN(**self.config["dqn"])
+        self.agent.load_disk_repr(self.stor["dqns"], self.run_index-1)
         if not self.simulate_participants:
             MainLogger("Gathering real participants")
             timeline, ids, states = self.gather_participants()
@@ -268,17 +268,13 @@ class MDiabetes:
             next_state = next_states[idx].clone()
             resp = responses[i, [2,4]]
             sid = torch.tensor(MessagesH.sid_lookup(action)).long()
-            if resp.sum() == 0:
-                continue
             for j in range(resp.size(0)):
-                if resp[j] == 0:
-                    continue
                 reward += torch.clip(resp[j] - state[sid[j]-1], 0)
-                upd = torch.clip(resp[j] - state[sid[j]-1], 0)
-                next_state[sid[j]-1] += upd
-                next_state[sid[j]-1] = torch.clip(next_state[sid[j]-1], 0, 3)
+                next_state[sid[j]-1] = resp[j]
             next_states[idx] = next_state
             rewards[i] = reward
+            if resp.sum() == 0:
+                continue
             tr = [state.clone(), action, reward, next_state.clone()]
             transitions.append(tr)
         return next_states, transitions

@@ -5,3 +5,4 @@ arogya_content
 .env
 meeting-notes/
 .ipynb_checkpoints
+analytics.ipynb

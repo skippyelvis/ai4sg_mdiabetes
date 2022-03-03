@@ -257,14 +257,20 @@ class DQN:
         disk['target_state_dict'] = self.target.state_dict()
         disk['memory'] = self.memory.mem
         disk['epsilon'] = torch.tensor(self.epsilon)
+        DQNLogger("saving DQN#", index)
         return stor.save_data(disk, index)
 
     def load_disk_repr(self, stor, index):
         # load the most recent dqn agent
         disk = stor.load_indexed_data(index)
+        DQNLogger("loading DQN#", index, btbrk=None)
         if disk is not None:
             self.policy.load_state_dict(disk['policy_state_dict'])
             self.target.load_state_dict(disk['target_state_dict'])
             self.memory.mem = disk['memory']
             self.epsilon = disk['epsilon'].item()
+            DQNLogger("loaded from gcs", topbrk=None)
+        else:
+            DQNLogger("using randomly initialized models", topbrk=None)
+
 
