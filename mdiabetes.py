@@ -2,9 +2,9 @@ import json
 import torch
 from storage import make_storage_group, load_yaml
 from model import DQN
+from agent import ClusteredAgent
 from content import StatesH, MessagesH, QuestionsH
 from logger import MainLogger
-
 
 class MDiabetes:
 
@@ -20,7 +20,9 @@ class MDiabetes:
 
     def main(self):
         self.run_index = self.stor["states"].count_files() + 1
-        MainLogger("Starting week #", self.run_index, self.simulate_responses, self.simulate_participants)
+        MainLogger("Starting week #", self.run_index)
+        MainLogger("Simulated Responses:", self.simulate_responses)
+        MainLogger("Simulated Participants:", self.simulate_participants)
         self.agent = DQN(**self.config["dqn"])
         MainLogger("Loading DQN agent")
         self.agent.load_disk_repr(self.stor["dqns"], self.run_index-1)

@@ -3,7 +3,9 @@ from torch import nn, optim
 import numpy as np
 from logger import DQNLogger
 
-DEVICE = torch.device('cpu')
+# DEVICE = torch.device('cpu')
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+DQNLogger("device:", str(DEVICE))
 
 class Memory:
     # memory object for holding most recent transitions
@@ -148,12 +150,17 @@ class DQN:
         self.memory = Memory(**memory)
         self.convergence = convergence
 
+    def check(self, train_or_warmup):
+        stop = self.convergence.get(train_or_warmup, 1)
+        minloss = self.convergence.get('min_loss', 0.5)
+        return ConvergenceCheck(stop, minloss)
+
     def weekly_training_update(self, transitions, run_index):
         self.memory.add(transitions)
         lossh = torch.tensor([])
         if self.memory.N == 0:
             return lossh
-        check = ConvergenceCheck(self.convergence['training'], self.convergence['min_loss'])
+        check = self.check("training")
         DQNLogger("Starting training", btbrk=None)
         optimizer = self.new_optimizer(self.train_lr)
         for ns in range(self.num_samples):
@@ -196,7 +203,7 @@ class DQN:
         lossh = []
         optimizer = self.new_optimizer(self.warmup_lr)
         criterion = self.new_criterion()
-        check = ConvergenceCheck(self.convergence['warmup'], self.convergence['min_loss'])
+        check = self.check("warmup")
         DQNLogger("Starting warmup", btbrk=None)
         for warmi in range(self.warmup_iters):
             optimizer.zero_grad()

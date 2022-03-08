@@ -22,3 +22,4 @@ class Logger:
 StorageLogger = Logger("storage").log
 MainLogger = Logger("main").log
 DQNLogger = Logger("dqn").log
+AgentLogger = Logger("agent").log

@@ -5,24 +5,23 @@ N_simul_batch_1: 256
 N_simul_batch_2: 0
 
 storage:
-  experiment: jack_testing_10
+  experiment: jack_testing_1_repeat
   local: True
-  cloud: True
+  cloud: False
 
 dqn:
   criterion: MSELoss
   optimizer: SGD
   optimizer_kw:
     momentum: 0.9
-    weight_decay: 1e-4
-  train_lr: .005
-  warmup_lr: .01
-  warmup_iters: 5000
-  num_samples: 5000
+  train_lr: .01
+  warmup_lr: .05
+  warmup_iters: 50000
+  num_samples: 50000
   sync_steps: 2
-  epsilon: .8
+  epsilon: .2
   epsilon_decay: .9
-  gamma: .7
+  gamma: .8
 
   model:
     input_shape: 8
@@ -39,5 +38,5 @@ dqn:
 
   convergence:
     training: 50
-    warmup: 100
-    min_loss: .01
+    warmup: 50
+    min_loss: .005

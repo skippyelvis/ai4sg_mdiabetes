@@ -167,7 +167,7 @@ class Storage(PathHandler):
 LOCAL_STORAGE_FOLDER = "local_storage"
 PUBLIC_BUCKET = os.getenv("MDIABETES_GCS_BUCKET_PUBLIC")
 PRIVATE_BUCKET = os.getenv("MDIABETES_GCS_BUCKET_PRIVATE")
-CLOUD_STORAGE_FOLDER_TESTING = "uo-ai-storage"
+CLOUD_STORAGE_FOLDER_AI = "uo-ai-storage"
 CLOUD_STORAGE_FOLDER_PROD = "uploads"
 CLOUD_STORAGE_FOLDER_BATCHES = "Batches"
 CLOUD_STORAGE_FOLDER_RESPONSES = "uploads"
@@ -180,7 +180,7 @@ def make_storage_group(experiment="preprod", local=LOCAL, cloud=CLOUD):
             local,    # store data locally? 
             cloud,    # store data on cloud?
             PUBLIC_BUCKET,   # gcs bucket to use
-            CLOUD_STORAGE_FOLDER_TESTING,   # top-level folder in bucket
+            CLOUD_STORAGE_FOLDER_AI,   # top-level folder in bucket
             LOCAL_STORAGE_FOLDER,           # top-level local folder
             [experiment, experiment], # middle-level folder on [local, cloud]
             ["states", "states"],     # lowest-level folder on [local, cloud]
@@ -189,22 +189,22 @@ def make_storage_group(experiment="preprod", local=LOCAL, cloud=CLOUD):
             0        # filename offset
     )
     # participant IDs
-    IDStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_TESTING, 
+    IDStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_AI, 
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["ids", "ids"], "", ".pt", 0)
     # weekly (ID, action) mapping
-    ActionStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_TESTING,
+    ActionStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_AI,
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["actions", "actions"], "", ".pt", 0)
     # timeline of participants (ID, weeks_since_join)
-    TLStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_TESTING,
+    TLStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_AI,
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["timeline", "timeline"], "", ".pt", 0)
     # dqn model weights, memory
-    DQNStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_TESTING,
+    DQNStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_AI,
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["dqn", "dqn"], "", ".pt", 0)
     # debugging info each week (ai metrics)
-    DebugStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_TESTING,
+    DebugStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_AI,
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["debug", "debug"], "", ".pt", 0)
     # where to store yaml hyperparameter file
-    YamlStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_TESTING,
+    YamlStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_AI,
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["yaml", "yaml"], "", ".yaml", 0)
     # incoming participant (ID, phone) mapping
     BatchStor = Storage(local, cloud, PRIVATE_BUCKET, CLOUD_STORAGE_FOLDER_BATCHES,
