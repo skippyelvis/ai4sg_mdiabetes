@@ -23,7 +23,8 @@ class MDiabetes:
         MainLogger("Starting week #", self.run_index)
         MainLogger("Simulated Responses:", self.simulate_responses)
         MainLogger("Simulated Participants:", self.simulate_participants)
-        self.agent = DQN(**self.config["dqn"])
+        # self.agent = DQN(**self.config["dqn"])
+        self.agent = ClusteredAgent(self.config["cluster"], self.config["dqn"])
         MainLogger("Loading DQN agent")
         self.agent.load_disk_repr(self.stor["dqns"], self.run_index-1)
         if not self.simulate_participants:
@@ -61,6 +62,7 @@ class MDiabetes:
             if not self.simulate_responses: 
                 self.stor["outfiles"].save_data(msg_qsn, self.run_index)
             self.stor["yaml"].save_data(self.config_path, 0)
+        MainLogger("="*20)
 
     def gather_participants(self):
         # load previous timeline, ids, and states

@@ -4,18 +4,23 @@ from logger import AgentLogger
 
 class ClusteredAgent:
 
-    def __init__(self, dqn_kw):
+    def __init__(self, cluster_kw, dqn_kw):
+        self.cluster_kw = cluster_kw
         self.dqn_kw = dqn_kw
         self.agents = []
         self.n_clusters = -1
 
     def assign_cluster(self, state):
+        if self.cluster_kw.get("force_one", False):
+            return 0
         if state.sum() < 12:
             return 0
         return 1
 
     def init_clusters(self, states):
         self.n_clusters = 2
+        if self.cluster_kw.get("force_one", False):
+            self.n_clusters = 1
         for i in range(self.n_clusters):
             agent = DQN(**self.dqn_kw)
             self.agents.append(agent)
@@ -97,6 +102,7 @@ class ClusteredAgent:
                 self.agents[n].target.load_state_dict(disk['target_state_dict'])
                 self.agents[n].memory.mem = disk['memory']
                 self.agents[n].epsilon = disk['epsilon'].item()
+            AgentLogger("loaded all", topbrk=None)
 
 if __name__ == "__main__":
     c = ClusteredAgent({})
