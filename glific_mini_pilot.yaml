@@ -1,28 +1,24 @@
 dry_run: False
-simulate_responses: True
-simulate_participants: True
-N_simul_batch_1: 256
-N_simul_batch_2: 64
+simulate_responses: False
+simulate_participants: False
 
 storage:
-  experiment: testing
-  local: True
+  experiment: glific_mini_pilot
+  local: False
   cloud: True
 
 dqn:
   criterion: MSELoss
   optimizer: SGD
-  optimizer_kw:
-    weight_decay: 1e-5
   train_lr: 1e-3
-  warmup_lr: 1e-2
+  warmup_lr: 1e-1
   train_iters: 1
-  warmup_iters: 30000
-  num_samples: 50000
+  warmup_iters: 1000
+  num_samples: 1000
   sync_steps: 2
-  epsilon: .2
+  epsilon: .9
   epsilon_decay: .9
-  gamma: .80
+  gamma: .30
 
   model:
     input_shape: 8
@@ -34,9 +30,9 @@ dqn:
       negative_slope: 0.2
 
   memory:
-    capacity: 256
-    batch_size: 128
+    capacity: 50
+    batch_size: 5
 
   convergence:
     reps: 50
-    min_loss: .00001
+    min_loss: .0001

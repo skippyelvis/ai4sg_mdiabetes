@@ -1,31 +1,16 @@
-import yaml
 import json
-import re
 import torch
-from storage import make_storage_group
+from storage import make_storage_group, load_yaml
 from model import DQN
 from content import StatesH, MessagesH, QuestionsH
 from logger import MainLogger
 
-def load_config(path):
-    loader = yaml.SafeLoader
-    loader.add_implicit_resolver(
-        u'tag:yaml.org,2002:float',
-        re.compile(u'''^(?:
-         [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
-        |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
-        |\\.[0-9_]+(?:[eE][-+][0-9]+)?
-        |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
-        |[-+]?\\.(?:inf|Inf|INF)
-        |\\.(?:nan|NaN|NAN))$''', re.X),
-        list(u'-+0123456789.'))
-    data = yaml.load(open(path, "r"), Loader=loader)
-    return data
 
 class MDiabetes:
 
     def __init__(self, config_path):
-        self.config = load_config(config_path)
+        self.config_path = config_path
+        self.config = load_yaml(self.config_path)
         self.dry_run = self.config["dry_run"]
         self.simulate_responses = self.config["simulate_responses"]
         self.simulate_participants = self.config["simulate_participants"]
@@ -37,6 +22,7 @@ class MDiabetes:
         self.run_index = self.stor["states"].count_files() + 1
         MainLogger("Starting week #", self.run_index, self.simulate_responses, self.simulate_participants)
         self.agent = DQN(**self.config["dqn"])
+        MainLogger("Loading DQN agent")
         self.agent.load_disk_repr(self.stor["dqns"], self.run_index-1)
         if not self.simulate_participants:
             MainLogger("Gathering real participants")
@@ -72,6 +58,7 @@ class MDiabetes:
             self.stor["debugs"].save_data(debug, self.run_index)
             if not self.simulate_responses: 
                 self.stor["outfiles"].save_data(msg_qsn, self.run_index)
+            self.stor["yaml"].save_data(self.config_path, 0)
 
     def gather_participants(self):
         # load previous timeline, ids, and states

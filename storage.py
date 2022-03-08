@@ -1,9 +1,12 @@
 from google.cloud import storage
+import re
 import os
 from dotenv import load_dotenv
 import csv
 import torch
 import shutil
+import yaml
+from logger import StorageLogger
 
 load_dotenv()
 
@@ -42,6 +45,21 @@ class PathHandler:
             N = len(blobs)
             return max(0, N)
 
+def load_yaml(fname):
+    loader = yaml.SafeLoader
+    loader.add_implicit_resolver(
+        u'tag:yaml.org,2002:float',
+        re.compile(u'''^(?:
+         [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
+        |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
+        |\\.[0-9_]+(?:[eE][-+][0-9]+)?
+        |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
+        |[-+]?\\.(?:inf|Inf|INF)
+        |\\.(?:nan|NaN|NAN))$''', re.X),
+        list(u'-+0123456789.'))
+    data = yaml.load(open(fname, "r"), Loader=loader)
+    return data
+
 class Storage(PathHandler):
 
     def __init__(self, local, cloud, *args):
@@ -63,7 +81,9 @@ class Storage(PathHandler):
         localf = self.filename(self.local_folder, index)
         cloudf = self.filename(self.cloud_folder, index)
         if self.local and not self.cloud:
+            StorageLogger("loading local", localf)
             return self.load_local(localf)
+        StorageLogger("loading cloud", cloudf)
         return self.load_cloud(cloudf, localf)
 
     def save_local(self, data, fname):
@@ -74,23 +94,33 @@ class Storage(PathHandler):
                 wr = csv.writer(fp)
                 for row in data:
                     wr.writerow(row)
+        elif self.file_ext == "yaml":
+            shutil.copy(data, fname)
+
+    def load_pt(self, fname):
+        return torch.load(fname)
+
+    def load_csv(self, fname):
+        data = []
+        with open(fname, "r") as fp:
+            rd = csv.reader(fp)
+            for row in rd:
+                try:
+                    row = [int(r) for r in row]
+                    data.append(row)
+                except:
+                    pass
+        return data
 
     def load_local(self, fname):
         if not os.path.exists(fname):
             return None
         if self.file_ext == "pt":
-            return torch.load(fname)
+            return self.load_pt(fname)
         elif self.file_ext == "csv":
-            data = []
-            with open(fname, "r") as fp:
-                rd = csv.reader(fp)
-                for row in rd:
-                    try:
-                        row = [int(r) for r in row]
-                        data.append(row)
-                    except:
-                        pass
-            return data
+            return self.load_csv(fname)
+        elif self.file_ext == "yaml":
+            return load_yaml(fname)
 
     def save_cloud(self, data, cloud_fname, local_fname):
         if not self.local:
@@ -173,6 +203,9 @@ def make_storage_group(experiment="preprod", local=LOCAL, cloud=CLOUD):
     # debugging info each week (ai metrics)
     DebugStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_TESTING,
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["debug", "debug"], "", ".pt", 0)
+    # where to store yaml hyperparameter file
+    YamlStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_TESTING,
+            LOCAL_STORAGE_FOLDER, [experiment, experiment], ["yaml", "yaml"], "", ".yaml", 0)
     # incoming participant (ID, phone) mapping
     BatchStor = Storage(local, cloud, PRIVATE_BUCKET, CLOUD_STORAGE_FOLDER_BATCHES,
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["batch", ""], "batch", ".csv", 0)
@@ -191,7 +224,8 @@ def make_storage_group(experiment="preprod", local=LOCAL, cloud=CLOUD):
             "debugs": DebugStor,
             "batches": BatchStor,
             "responses": RespStor,
-            "outfiles": MsgQsnStor
+            "outfiles": MsgQsnStor,
+            "yaml": YamlStor
             }
     return Stor
 

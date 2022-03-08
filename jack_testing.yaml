@@ -2,10 +2,10 @@ dry_run: False
 simulate_responses: True
 simulate_participants: True
 N_simul_batch_1: 256
-N_simul_batch_2: 64
+N_simul_batch_2: 0
 
 storage:
-  experiment: regularized_testing_12
+  experiment: jack_testing_10
   local: True
   cloud: True
 
@@ -14,15 +14,15 @@ dqn:
   optimizer: SGD
   optimizer_kw:
     momentum: 0.9
-  train_lr: .01
-  warmup_lr: .05
-  train_iters: 1
-  warmup_iters: 500
-  num_samples: 100
+    weight_decay: 1e-4
+  train_lr: .005
+  warmup_lr: .01
+  warmup_iters: 5000
+  num_samples: 5000
   sync_steps: 2
-  epsilon: .2
+  epsilon: .8
   epsilon_decay: .9
-  gamma: .80
+  gamma: .7
 
   model:
     input_shape: 8
@@ -34,9 +34,10 @@ dqn:
       negative_slope: 0.2
 
   memory:
-    capacity: 1024
+    capacity: 512
     batch_size: 256
 
   convergence:
-    reps: 50
-    min_loss: .00001
+    training: 50
+    warmup: 100
+    min_loss: .01
