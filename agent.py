@@ -38,7 +38,7 @@ class ClusteredAgent:
             mask = clusters == n
             l = self.agents[n].train_warmup(states[mask], targets[mask])
             loss.append(l)
-        return loss[0]
+        return loss
 
     def choose_actions(self, states):
         clusters = []
@@ -53,7 +53,7 @@ class ClusteredAgent:
             random, act = self.agents[n].choose_actions(states[mask])
             randoms[mask] = random
             actions[mask] = act
-        return randoms, actions
+        return randoms, actions, clusters
 
     def weekly_training_update(self, transitions, index):
         AgentLogger("clustering transitions")
@@ -67,7 +67,7 @@ class ClusteredAgent:
             clust = clustered[n]
             l = dqn.weekly_training_update(clust, index)
             loss.append(l)
-        return loss[0] 
+        return loss
 
     def save_disk_repr(self, stor, index):
         cdisk = {}

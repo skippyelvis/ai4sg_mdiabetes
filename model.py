@@ -168,7 +168,7 @@ class DQN:
             if sample_lossh is None:
                 break
             lossh = torch.cat((lossh, sample_lossh))
-            if ns % (self.num_samples//10) == 0:
+            if ns % 50 == 0:
                 lv = sample_lossh[-1].item()
                 DQNLogger(" #", ns, f"/{self.num_samples}, Loss:", lv, topbrk=None, btbrk=None)
             if check(sample_lossh[-1]):
@@ -214,7 +214,7 @@ class DQN:
             optimizer.step()
             if warmi % 10 == 0:
                 lossh.append(loss.item())
-            if warmi % (self.warmup_iters//10) == 0:
+            if warmi % 50 == 0:
                 DQNLogger(" #", warmi, ", Loss:", loss.item(), topbrk=None, btbrk=None)
             if check(loss):
                 DQNLogger("Warmup convergence check passed @", warmi, topbrk=None, btbrk=None)

@@ -40,7 +40,7 @@ class MDiabetes:
             weekly_loss = self.warmup_agent(states)
         optin, core, ai = self.weekly_masks(timeline)
         MainLogger("Generating weekly actions")
-        actions, ai_random = self.weekly_actions(optin, core, ai, timeline, ids, states)
+        actions, ai_random, ai_clusters = self.weekly_actions(optin, core, ai, timeline, ids, states)
         MainLogger("Building message/question file")
         msg_qsn = self.generate_msg_qsn(actions, timeline, states)
         MainLogger("Checking for responses")
@@ -50,7 +50,7 @@ class MDiabetes:
         if self.run_index > 1 and len(transitions) > 0:
             weekly_loss = self.agent.weekly_training_update(transitions, self.run_index)
         MainLogger("analyzing ai performance")
-        debug = self.weekly_ai_debug(ai, actions[:,1], ai_random, weekly_loss, ids, states)
+        debug = self.weekly_ai_debug(ai, actions[:,1], ai_random, ai_clusters, weekly_loss, ids, states)
         if not self.dry_run:
             MainLogger("Saving data")
             self.stor["states"].save_data(next_states, self.run_index)
@@ -155,14 +155,14 @@ class MDiabetes:
         actions = torch.zeros(states.size(0)).long()
         optin_actions = MessagesH.random_core_actions(optin.sum().item())
         core_actions = MessagesH.scheduled_core_actions(timeline[core])
-        ai_random_mask, ai_actions = self.agent.choose_actions(states[ai])
+        ai_random_mask, ai_actions, ai_clusters = self.agent.choose_actions(states[ai])
         actions[optin] = torch.tensor(optin_actions).long() 
         actions[core] = torch.tensor(core_actions).long()
         actions[ai] = ai_actions.clone()
         actions = torch.cat((ids.reshape(-1,1), actions.reshape(-1,1)),1)
-        return actions, ai_random_mask
+        return actions, ai_random_mask, ai_clusters
 
-    def weekly_ai_debug(self, mask, actions, ai_random, loss, ids, states):
+    def weekly_ai_debug(self, mask, actions, ai_random, ai_clusters, loss, ids, states):
         ids = ids[mask]
         states = states[mask].clone()
         actions = actions[mask]
@@ -170,7 +170,7 @@ class MDiabetes:
                 "friendly": torch.tensor([]),
                 "metrics": {},
                 "loss": loss,
-                "friendly_keys": ["id", "score", "action", "random"]
+                "friendly_keys": ["id", "score", "action", "random", "cluster"]
         }
         if actions.size(0) == 0:
             return debug 
@@ -190,10 +190,13 @@ class MDiabetes:
             ids.reshape(-1,1),
             scores.reshape(-1,1), 
             actions.reshape(-1,1),
-            ai_random.reshape(-1,1)),1)
+            ai_random.reshape(-1,1),
+            ai_clusters.reshape(-1,1)),1)
         debug["metrics"] = {
                 "average_score": scores.float().mean(),
-                "uniqueness": actions.unique().size(0) / actions.size(0)
+                "n_unique": actions.unique().size(0),
+                "uniqueness": actions.unique().size(0) / actions.size(0),
+                "action_representation": actions.unique().size(0) / MessagesH.N
                 }
         return debug
 
