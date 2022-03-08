@@ -40,7 +40,7 @@
 - save this file on your computer, ex `/home/user/keys/mdiabetes-gcs-key.json`
 - export the path to this file as `$GOOGLE_APPLICATION_CREDENTIALS`
     - for example, in you `~/.bashrc` or `~/.profile` add the following line:
-        `export GOOGLE_APPLICATION_CREDENTIALS = $HOME/keys/mdiabetes-gcs-key.json`
+        `export GOOGLE_APPLICATION_CREDENTIALS=$HOME/keys/mdiabetes-gcs-key.json`
 - using developer keys is a security measure so no unknown/unauthenticated parties can write to our GCS buckets
 
 ### `.env` file
@@ -54,6 +54,10 @@
     - clone the repo
     - rename `.env_sample` to `.env`: `ai4sg_mdiabetes$ cp .env_sample .env`
     - open `.env` and replace the bucket names with their real world names
+
+### `arogya_content/` directory
+- sent via email
+- contains message/question banks, questionnaires, etc
 
 ### yaml input file
 - each experiment has many hyperparameters which are defined in a `.yaml` file
