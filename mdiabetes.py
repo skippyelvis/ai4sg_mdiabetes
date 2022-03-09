@@ -61,7 +61,7 @@ class MDiabetes:
             self.stor["debugs"].save_data(debug, self.run_index)
             if not self.simulate_responses: 
                 self.stor["outfiles"].save_data(msg_qsn, self.run_index)
-            self.stor["yaml"].save_data(self.config_path, 0)
+            self.stor["yaml"].save_data(self.config_path, self.run_index)
         MainLogger("="*20)
 
     def gather_participants(self):
