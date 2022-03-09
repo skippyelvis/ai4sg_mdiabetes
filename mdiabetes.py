@@ -219,9 +219,19 @@ class MDiabetes:
             file.append([row_id, m1, q1, m2, q2])
             if self.simulate_responses:
                 (s1, s2) = MessagesH.sid_lookup(p)
-                r1 = torch.randint(2, 4, (1,))[0].item()
-                r2 = torch.randint(2, 4, (1,))[0].item()
-                simul_resp.append([row_id, q1, r1, q2, r1])
+                r1 = states[i][s1-1]
+                r2 = states[i][s2-1]
+                if r1 % 1 == 0 and r1 != 3:
+                    r1 += 0.001
+                if r2 % 1 == 0 and r2 != 3:
+                    r2 += 0.001
+                r1 = torch.ceil(r1)
+                r2 = torch.ceil(r2)
+                r1 = torch.clip(r1, 0, 3).long().item()
+                r2 = torch.clip(r2, 0, 3).long().item()
+                # r1 = torch.randint(2, 4, (1,))[0].item()
+                # r2 = torch.randint(2, 4, (1,))[0].item()
+                simul_resp.append([row_id, q1, r1, q2, r2])
         if self.simulate_responses and not self.dry_run:
             self.stor["responses"].save_data(simul_resp, self.run_index) 
         return file
@@ -263,7 +273,8 @@ class MDiabetes:
             sid = torch.tensor(MessagesH.sid_lookup(action)).long()
             for j in range(resp.size(0)):
                 reward += torch.clip(resp[j] - state[sid[j]-1], 0)
-                next_state[sid[j]-1] = resp[j]
+                upd = torch.clip(resp[j] - state[sid[j]-1], 0)
+                next_state[sid[j]-1] += upd / 2
             next_states[idx] = next_state
             rewards[i] = reward
             if resp.sum() == 0:

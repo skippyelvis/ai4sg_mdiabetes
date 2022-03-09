@@ -3,8 +3,8 @@ from torch import nn, optim
 import numpy as np
 from logger import DQNLogger
 
-# DEVICE = torch.device('cpu')
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+DEVICE = torch.device('cpu')
+# DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 DQNLogger("device:", str(DEVICE))
 
 class Memory:
@@ -168,7 +168,7 @@ class DQN:
             if sample_lossh is None:
                 break
             lossh = torch.cat((lossh, sample_lossh))
-            if ns % 50 == 0:
+            if ns % 25 == 0:
                 lv = sample_lossh[-1].item()
                 DQNLogger(" #", ns, f"/{self.num_samples}, Loss:", lv, topbrk=None, btbrk=None)
             if check(sample_lossh[-1]):
@@ -206,15 +206,14 @@ class DQN:
         check = self.check("warmup")
         DQNLogger("Starting warmup", btbrk=None)
         for warmi in range(self.warmup_iters):
-            optimizer.zero_grad()
             pred_qvals = self.policy(warmup_states)
             loss = criterion(pred_qvals, warmup_targets)
+            optimizer.zero_grad()
             loss.backward()
             self.policy.clamp_grads()
             optimizer.step()
-            if warmi % 10 == 0:
-                lossh.append(loss.item())
-            if warmi % 50 == 0:
+            lossh.append(loss.item())
+            if warmi % 25 == 0:
                 DQNLogger(" #", warmi, ", Loss:", loss.item(), topbrk=None, btbrk=None)
             if check(loss):
                 DQNLogger("Warmup convergence check passed @", warmi, topbrk=None, btbrk=None)

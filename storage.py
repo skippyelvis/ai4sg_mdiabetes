@@ -81,9 +81,9 @@ class Storage(PathHandler):
         localf = self.filename(self.local_folder, index)
         cloudf = self.filename(self.cloud_folder, index)
         if self.local and not self.cloud:
-            StorageLogger("loading local", localf)
+            # StorageLogger("loading local", localf)
             return self.load_local(localf)
-        StorageLogger("loading cloud", cloudf)
+        # StorageLogger("loading cloud", cloudf)
         return self.load_cloud(cloudf, localf)
 
     def save_local(self, data, fname):
