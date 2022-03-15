@@ -100,7 +100,7 @@ class MDiabetes:
             if states is None:
                 states = new_states
                 MainLogger("Initializing clusters")
-                self.agent.init_clusters(states)
+                self.agent.init_clusters(all_states)
                 clusters = self.agent.assign_clusters(states)
             else:
                 states = torch.cat((states, new_states))
