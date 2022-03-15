@@ -1,11 +1,11 @@
 dry_run: False
-simulate_responses: True
+simulate_responses: False
 simulate_participants: False
 N_simul_batch_1: 0
 N_simul_batch_2: 0
 
 storage:
-  experiment: preprod
+  experiment: sample
   local: True
   cloud: True
 
