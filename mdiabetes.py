@@ -1,7 +1,7 @@
 import json
+import os
 import torch
 from storage import make_storage_group, load_yaml
-from model import DQN
 from agent import ClusteredAgent
 from content import StatesH, MessagesH, QuestionsH
 from logger import MainLogger
@@ -21,46 +21,46 @@ class MDiabetes:
     def main(self):
         self.run_index = self.stor["states"].count_files() + 1
         MainLogger("Starting week #", self.run_index)
+        MainLogger("Dry run:", self.dry_run)
         MainLogger("Simulated Responses:", self.simulate_responses)
         MainLogger("Simulated Participants:", self.simulate_participants)
-        # self.agent = DQN(**self.config["dqn"])
-        self.agent = ClusteredAgent(self.config["cluster"], self.config["dqn"])
         MainLogger("Loading DQN agent")
+        self.agent = ClusteredAgent(self.config["cluster"], self.config["dqn"])
         self.agent.load_disk_repr(self.stor["dqns"], self.run_index-1)
         if not self.simulate_participants:
             MainLogger("Gathering real participants")
-            timeline, ids, states = self.gather_participants()
+            timeline, ids, clusters, states = self.gather_participants()
         else:
             MainLogger("Gathering simul participants")
-            timeline, ids, states = self.gather_simulated_participants()
+            timeline, ids, clusters, states = self.gather_simulated_participants()
         MainLogger("# Participants:", states.size(0))
         weekly_loss = torch.tensor([])
         if self.run_index == 1:
             MainLogger("Warming up agent")
-            weekly_loss = self.warmup_agent(states)
+            weekly_loss = self.warmup_agent(clusters, states)
         optin, core, ai = self.weekly_masks(timeline)
         MainLogger("Generating weekly actions")
-        actions, ai_random, ai_clusters = self.weekly_actions(optin, core, ai, timeline, ids, states)
+        actions, ai_random = self.weekly_actions(optin, core, ai, timeline, ids, clusters, states)
         MainLogger("Building message/question file")
         msg_qsn = self.generate_msg_qsn(actions, timeline, states)
         MainLogger("Checking for responses")
-        prev_actions, responses = self.collect_responses()
+        prev_actions, prev_clusters, responses = self.collect_responses()
         MainLogger("updating states and adding transitions")
-        next_states, transitions = self.update_states(prev_actions, responses, states, ids)
+        next_states, transitions = self.update_states(prev_actions, prev_clusters, responses, states, ids)
         if self.run_index > 1 and len(transitions) > 0:
             weekly_loss = self.agent.weekly_training_update(transitions, self.run_index)
         MainLogger("analyzing ai performance")
-        debug = self.weekly_ai_debug(ai, actions[:,1], ai_random, ai_clusters, weekly_loss, ids, states)
+        debug = self.weekly_ai_debug(ai, actions, ai_random, weekly_loss, ids, clusters, states)
         if not self.dry_run:
             MainLogger("Saving data")
             self.stor["states"].save_data(next_states, self.run_index)
             self.stor["ids"].save_data(ids, self.run_index)
+            self.stor["clusters"].save_data(clusters, self.run_index)
             self.stor["actions"].save_data(actions, self.run_index)
             self.stor["timelines"].save_data(timeline, self.run_index)
             self.agent.save_disk_repr(self.stor["dqns"], self.run_index)
             self.stor["debugs"].save_data(debug, self.run_index)
-            if not self.simulate_responses: 
-                self.stor["outfiles"].save_data(msg_qsn, self.run_index)
+            self.stor["outfiles"].save_data(msg_qsn, self.run_index)
             self.stor["yaml"].save_data(self.config_path, self.run_index)
         MainLogger("="*20)
 
@@ -69,6 +69,7 @@ class MDiabetes:
         # load possible new batch
         timeline = self.stor["timelines"].load_indexed_data(self.run_index-1)
         ids = self.stor["ids"].load_indexed_data(self.run_index-1)
+        clusters = self.stor["clusters"].load_indexed_data(self.run_index-1)
         states = self.stor["states"].load_indexed_data(self.run_index-1)
         new_batch = self.stor["batches"].load_indexed_data(self.run_index)
         def modify_whatsapp(x):
@@ -77,6 +78,7 @@ class MDiabetes:
             return int(x)
         if new_batch is not None:
             all_whatsapps, all_states = StatesH.compute_states()
+            new_states = None
             for new_glific_id, new_whatsapp in new_batch:
                 new_whatsapp = modify_whatsapp(new_whatsapp)
                 where = (new_whatsapp == all_whatsapps).nonzero()
@@ -85,16 +87,27 @@ class MDiabetes:
                 new_glific_id = torch.tensor([new_glific_id]).long()
                 new_state = all_states[where[0]]
                 new_tl = torch.cat((new_glific_id, torch.tensor([0]))).reshape(1,-1)
-                if states is None:
+                if new_states is None:
+                    new_states = new_state
+                else:
+                    new_states = torch.cat((new_states, new_state))
+                if timeline is None:
                     timeline = new_tl
                     ids = new_glific_id
-                    states = new_state
                 else:
                     timeline = torch.cat((timeline, new_tl))
                     ids = torch.cat((ids, new_glific_id))
-                    states = torch.cat((states, new_state))
+            if states is None:
+                states = new_states
+                MainLogger("Initializing clusters")
+                self.agent.init_clusters(states)
+                clusters = self.agent.assign_clusters(states)
+            else:
+                states = torch.cat((states, new_states))
+                new_clusters = self.agent.assign_clusters(new_states)
+                clusters = torch.cat((clusters, new_clusters))
         timeline[:,1] += 1
-        return timeline, ids, states 
+        return timeline, ids, clusters, states 
 
     def gather_simulated_participants(self):
         timeline = self.stor["timelines"].load_indexed_data(self.run_index-1)
@@ -121,16 +134,27 @@ class MDiabetes:
         states = torch.cat((states, new_states))
         return timeline, ids, states
 
-    def warmup_agent(self, states):
-        targets = torch.zeros(states.size(0), MessagesH.N)
-        for row in range(states.size(0)):
+    def warmup_agent(self, clusters, states):
+        simul_warmup_path = "arogya_content/preprod_baseline_questionnaires/warmup_targets.pt"
+        if self.simulate_responses and os.path.exists(simul_warmup_path):
+            targets = torch.load(simul_warmup_path)
+            MainLogger("loaded warmup targets for simulation")
+        else: 
+            targets = torch.zeros(states.size(0), MessagesH.N)
+            mesage_sids = []
             for col in range(MessagesH.N):
-                val = 0
                 sids = MessagesH.sid_lookup(col)
-                for sid in sids:
-                    val += StatesH.state_max - states[row][sid-1]
-                targets[row,col] = val ** (1/2)
-        return self.agent.train_warmup(states, targets)
+                mesage_sids.append(sids)
+            for row in range(states.size(0)):
+                for col, sids in enumerate(mesage_sids):
+                    val = 0
+                    for sid in sids:
+                        val += StatesH.state_max - states[row][sid-1]
+                    targets[row,col] = val ** (1/2)
+        if self.simulate_responses:
+            torch.save(targets, simul_warmup_path)
+            MainLogger("saved warmup targets for simulations")
+        return self.agent.train_warmup(clusters, states, targets)
 
     def weekly_masks(self, timeline):
         # make the optin, core, ai groupings for this week
@@ -147,7 +171,7 @@ class MDiabetes:
                 ai_mask[idx] = True
         return (optin_mask, core_mask, ai_mask)
 
-    def weekly_actions(self, optin, core, ai, timeline, ids, states):
+    def weekly_actions(self, optin, core, ai, timeline, ids, clusters, states):
         # determine which actions to take this week
         # optin group gets random core action
         # core group needs scheduled action
@@ -155,15 +179,17 @@ class MDiabetes:
         actions = torch.zeros(states.size(0)).long()
         optin_actions = MessagesH.random_core_actions(optin.sum().item())
         core_actions = MessagesH.scheduled_core_actions(timeline[core])
-        ai_random_mask, ai_actions, ai_clusters = self.agent.choose_actions(states[ai])
+        ai_random_mask, ai_actions, ai_clusters = self.agent.choose_actions(clusters[ai], states[ai])
         actions[optin] = torch.tensor(optin_actions).long() 
         actions[core] = torch.tensor(core_actions).long()
         actions[ai] = ai_actions.clone()
         actions = torch.cat((ids.reshape(-1,1), actions.reshape(-1,1)),1)
-        return actions, ai_random_mask, ai_clusters
+        return actions, ai_random_mask
 
-    def weekly_ai_debug(self, mask, actions, ai_random, ai_clusters, loss, ids, states):
+    def weekly_ai_debug(self, mask, actions, ai_random, loss, ids, clusters, states):
+        actions = actions[:,1]
         ids = ids[mask]
+        clusters = clusters[mask]
         states = states[mask].clone()
         actions = actions[mask]
         debug = {
@@ -191,12 +217,19 @@ class MDiabetes:
             scores.reshape(-1,1), 
             actions.reshape(-1,1),
             ai_random.reshape(-1,1),
-            ai_clusters.reshape(-1,1)),1)
+            clusters.reshape(-1,1)),1)
+        def entropy(x):
+            x = torch.cat((x, torch.tensor([1596])))
+            b = x.bincount().float()
+            b[-1] -= 1
+            b = torch.nn.functional.softmax(b, dim=0)
+            b = torch.distributions.Categorical(b).entropy()
+            return b
         debug["metrics"] = {
                 "average_score": scores.float().mean(),
                 "n_unique": actions.unique().size(0),
-                "uniqueness": actions.unique().size(0) / actions.size(0),
-                "action_representation": actions.unique().size(0) / MessagesH.N
+                "action_representation": actions.unique().size(0) / MessagesH.N,
+                "action_entropy": entropy(actions)
                 }
         return debug
 
@@ -239,22 +272,22 @@ class MDiabetes:
     def collect_responses(self):
         # collect and handle the responses for this week
         # if new file exists, load and align to ids vector
-        resp = self.stor["responses"].load_indexed_data(self.run_index-1)
         prev_actions = self.stor["actions"].load_indexed_data(self.run_index-2)
-        if resp is None or prev_actions is None:
-            return None, None
-        if len(resp) == 0:
-            return None, None
-        resp = torch.tensor(resp).long()
-        if self.simulate_responses:
-            resp = resp[torch.randperm(resp.size(0))]
-        algn = torch.zeros(resp.size(0)).long()
-        for i in range(algn.size(0)):
-            algn[i] = (resp[:,0] == prev_actions[i,0]).nonzero()[0]
-        resp = resp[algn]
-        return prev_actions, resp
+        prev_clusters = self.stor["clusters"].load_indexed_data(self.run_index-2)
+        resp = self.stor["responses"].load_indexed_data(self.run_index-1)
+        if prev_actions is not None and resp is not None:
+            if len(resp) == 0:
+                return None, None
+            resp = torch.tensor(resp).long()
+            if self.simulate_responses:
+                resp = resp[torch.randperm(resp.size(0))]
+            algn = torch.zeros(resp.size(0)).long()
+            for i in range(algn.size(0)):
+                algn[i] = (resp[:,0] == prev_actions[i,0]).nonzero()[0]
+            resp = resp[algn]
+        return prev_actions, prev_clusters, resp
     
-    def update_states(self, actions, responses, states, ids):
+    def update_states(self, actions, clusters, responses, states, ids):
         # calculate this weeks state updates
         next_states = states.clone()
         transitions = []
@@ -279,7 +312,8 @@ class MDiabetes:
             rewards[i] = reward
             if resp.sum() == 0:
                 continue
-            tr = [state.clone(), action, reward, next_state.clone()]
+            cl = clusters[i]
+            tr = [cl, state.clone(), action, reward, next_state.clone()]
             transitions.append(tr)
         return next_states, transitions
 

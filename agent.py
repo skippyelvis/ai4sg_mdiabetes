@@ -9,30 +9,27 @@ class ClusteredAgent:
         self.dqn_kw = dqn_kw
         self.agents = []
         self.n_clusters = -1
-
-    def assign_cluster(self, state):
-        if self.cluster_kw.get("force_one", False):
-            return 0
-        if state.sum() < 12:
-            return 0
-        return 1
-
-    def init_clusters(self, states):
+    
+    def init_clusters(self, state):
         self.n_clusters = 2
-        if self.cluster_kw.get("force_one", False):
-            self.n_clusters = 1
         for i in range(self.n_clusters):
             agent = DQN(**self.dqn_kw)
             self.agents.append(agent)
         AgentLogger("clusters:", self.n_clusters)
 
-    def train_warmup(self, states, targets):
-        self.init_clusters(states)
+    def assign_cluster(self, state):
+        if state.sum() < 16:
+            return 0
+        return 1
+
+    def assign_clusters(self, states):
         clusters = []
         for i in range(states.size(0)):
             c = self.assign_cluster(states[i])
             clusters.append(c)
-        clusters = torch.tensor(clusters).long()
+        return torch.tensor(clusters).long()
+
+    def train_warmup(self, clusters, states, targets):
         loss = []
         for n in range(self.n_clusters):
             mask = clusters == n
@@ -40,12 +37,10 @@ class ClusteredAgent:
             loss.append(l)
         return loss
 
-    def choose_actions(self, states):
-        clusters = []
-        for i in range(states.size(0)):
-            c = self.assign_cluster(states[i])
-            clusters.append(c)
-        clusters = torch.tensor(clusters).long()
+    def choose_actions(self, clusters, states):
+        if not isinstance(clusters, torch.Tensor):
+            clusters = torch.tensor(clusters)
+        clusters = clusters.long()
         randoms = torch.zeros(states.size(0)).bool()
         actions = torch.zeros(states.size(0)).long()
         for n in range(self.n_clusters):
@@ -59,8 +54,7 @@ class ClusteredAgent:
         AgentLogger("clustering transitions")
         clustered = [[] for x in range(self.n_clusters)]
         for t in transitions:
-            c = self.assign_cluster(t[0])
-            clustered[c].append(t)
+            clustered[t[0]].append(t[1:])
         loss = []
         for n in range(self.n_clusters):
             dqn = self.agents[n]

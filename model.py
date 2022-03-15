@@ -152,7 +152,7 @@ class DQN:
 
     def check(self, train_or_warmup):
         stop = self.convergence.get(train_or_warmup, 1)
-        minloss = self.convergence.get('min_loss', 0.5)
+        minloss = self.convergence.get(f'{train_or_warmup}_min_loss', 0.5)
         return ConvergenceCheck(stop, minloss)
 
     def weekly_training_update(self, transitions, run_index):

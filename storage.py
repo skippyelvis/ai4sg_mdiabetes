@@ -191,6 +191,9 @@ def make_storage_group(experiment="preprod", local=LOCAL, cloud=CLOUD):
     # participant IDs
     IDStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_AI, 
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["ids", "ids"], "", ".pt", 0)
+    # participant cluster
+    ClusterStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_AI, 
+            LOCAL_STORAGE_FOLDER, [experiment, experiment], ["clusters", "clusters"], "", ".pt", 0)
     # weekly (ID, action) mapping
     ActionStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_AI,
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["actions", "actions"], "", ".pt", 0)
@@ -208,7 +211,7 @@ def make_storage_group(experiment="preprod", local=LOCAL, cloud=CLOUD):
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["yaml", "yaml"], "", ".yaml", 0)
     # incoming participant (ID, phone) mapping
     BatchStor = Storage(local, cloud, PRIVATE_BUCKET, CLOUD_STORAGE_FOLDER_BATCHES,
-            LOCAL_STORAGE_FOLDER, [experiment, experiment], ["batch", ""], "batch", ".csv", 0)
+            LOCAL_STORAGE_FOLDER, [experiment, ""], ["batch", ""], "batch", ".csv", 0)
     # weekly participant responses (ID, q1, r1, q2, r2)
     RespStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_RESPONSES,
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["responses", ""], "participant_responses_week", ".csv", 0)
@@ -218,6 +221,7 @@ def make_storage_group(experiment="preprod", local=LOCAL, cloud=CLOUD):
     Stor = {
             "states": StateStor,
             "ids": IDStor,
+            "clusters": ClusterStor,
             "actions": ActionStor,
             "timelines": TLStor,
             "dqns": DQNStor,

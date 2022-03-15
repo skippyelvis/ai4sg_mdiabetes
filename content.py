@@ -122,21 +122,27 @@ class QuestionHandler:
         return question_map
 
     def random_questions(self, state_elems):
-        q1 = np.random.choice(self.question_map[state_elems[0]])
+        qs1 = self.question_map[state_elems[0]]
+        qs2 = self.question_map[state_elems[1]]
+        q1 = np.random.choice(qs1)
         q2 = q1
         while q2 == q1:
-            q2 = np.random.choice(self.question_map[state_elems[1]])
+            q2 = np.random.choice(qs2)
         return q1, q2
 
 class Questionnaire:
     # logic for reading in an individual questionnaire and calculating states
 
-    def __init__(self, lang, spath="arogya_content/questionnaire_state_map.json"):
+    def __init__(self, pref, lang): 
+        self.pref = pref
         self.lang = lang
-        self.spath = spath
+        self.spath = f"arogya_content/{self.pref}_baseline_questionnaires/map.json"
         self.smap = self.read_state_map()
-        self.path = os.path.join("arogya_content", "baseline_questionnaires", f"mDiabetes-baseline-{self.lang}.xlsx")
-        self.mat = pd.read_excel(self.path)
+        self.path = os.path.join("arogya_content", f"{self.pref}_baseline_questionnaires", f"mDiabetes-baseline-{self.lang}.xlsx")
+        try:
+            self.mat = pd.read_excel(self.path)
+        except:
+            self.mat = None
         self.preprocess()
 
     def read_state_map(self):
@@ -151,6 +157,8 @@ class Questionnaire:
     def compute_states(self):
         # store the ID and calculate the state of participants
         whatsapps, states = [], []
+        if self.mat is None:
+            return whatsapps, states
         for i in range(self.mat.shape[0]):
             whatsapp = str(self.mat.iloc[i]['18'])
             if whatsapp is None or whatsapp == '':
@@ -165,32 +173,36 @@ class Questionnaire:
         # perform the logic defined in the state map
         participant = self.mat.iloc[i]
         participant_state = []
+        if self.mat is None:
+            return participant_state
         for skey in ['dynamic', 'fixed']:
             for state_elem, block in self.smap[skey].items():
                 val, count = 0, 0
                 for method, column, low, medium, high in block:
-                    if isinstance(participant[column], float) and np.isnan(participant[column]):
-                        val += 0
+                    if column not in participant:
+                        continue
+                    entry = participant[column]
+                    if isinstance(entry, float) and np.isnan(entry):
                         count += 1
                         continue
                     if method == "match":
-                        participant_entry = participant[column].partition(" ")[0]
+                        participant_entry = entry.partition(" ")[0]
                     elif method == "count":
-                        participant_entry = len(participant[column].split(","))
+                        participant_entry = len(entry.split(","))
                     if participant_entry in low:
                         val += 1
-                        count += 1
                     elif participant_entry in medium:
                         val += 2
-                        count += 1
                     elif participant_entry in high:
                         val += 3
-                        count += 1
+                    count += 1
                 participant_state.append(val/count if count > 0 else 0)
         return participant_state
 
     def preprocess(self):
         # clean up the raw questionnaires
+        if self.mat is None:
+            return
         def colid(c):
             cid = ""
             try:
@@ -206,15 +218,18 @@ class Questionnaire:
                 cols[i] = "0"
             cols[i] = colid(cols[i])
         self.mat.columns = cols
-        self.mat.drop([0,1], axis=0, inplace=True)
+        if self.pref == "pilot":
+            self.mat.drop([0,1], axis=0, inplace=True)
         self.mat['18'] = self.mat['18'].astype(int)
+        self.mat.drop_duplicates(subset=['18'], inplace=True)
 
 class StatesHandler:
     # handles multiple sets of states (from questionnaires) in one
 
-    def __init__(self, langs=['english', 'hindi', 'kannada']):
+    def __init__(self, pref="preprod", langs=['english', 'hindi', 'kannada']):
+        self.pref = pref
         self.langs = langs
-        self.qhs = [Questionnaire(l) for l in self.langs]
+        self.qhs = [Questionnaire(self.pref, l) for l in self.langs]
         self.state_max = 3
         self.N_elem = None
         
@@ -236,12 +251,17 @@ class StatesHandler:
         return whatsapps, states
 
 
-StatesH = StatesHandler()
-MessagesH = MessageHandler()
-QuestionsH = QuestionHandler()
+if __name__ != "__main__":
+    StatesH = StatesHandler()
+    MessagesH = MessageHandler()
+    QuestionsH = QuestionHandler()
 
 if __name__ == "__main__":
-    states = StatesHandler()
-    whatsapps, states = states.compute_states()
-    print(whatsapps)
-    print(states)
+    import sys
+    states = StatesHandler(sys.argv[1])
+    m = states.qhs[-1].mat
+    print(m.columns)
+    w, s = states.compute_states()
+    print(w)
+    print(s)
+    print(s.shape)
