@@ -46,7 +46,10 @@ class PathHandler:
             return max(0, N)
 
 def load_yaml(fname):
-    loader = yaml.SafeLoader
+    try:
+        loader = yaml.SafeLoader
+    except:
+        loader = yaml.Loader
     loader.add_implicit_resolver(
         u'tag:yaml.org,2002:float',
         re.compile(u'''^(?:
