@@ -1,4 +1,5 @@
 import torch
+from sklearn.cluster import MeanShift
 from model import DQN
 from logger import AgentLogger
 
@@ -9,18 +10,21 @@ class ClusteredAgent:
         self.dqn_kw = dqn_kw
         self.agents = []
         self.n_clusters = -1
+        self.cluster_centers = None
     
-    def init_clusters(self, state):
-        self.n_clusters = 2
+    def init_clusters(self, states):
+        clust = MeanShift().fit(states)
+        centers = torch.tensor(clust.cluster_centers_)
+        self.n_clusters = centers.size(0)
+        self.cluster_centers = centers
         for i in range(self.n_clusters):
             agent = DQN(**self.dqn_kw)
             self.agents.append(agent)
         AgentLogger("clusters:", self.n_clusters)
 
     def assign_cluster(self, state):
-        if state.sum() < 16:
-            return 0
-        return 1
+        d = (self.cluster_centers - state).pow(2).sum(1)
+        return d.argmin().item()
 
     def assign_clusters(self, states):
         clusters = []
@@ -66,6 +70,7 @@ class ClusteredAgent:
     def save_disk_repr(self, stor, index):
         cdisk = {}
         cdisk['n_clusters'] = torch.tensor(self.n_clusters)
+        cdisk['cluster_centers'] = self.cluster_centers
         AgentLogger("Saving agents", btbrk=None)
         for n in range(self.n_clusters):
             disk = {}
@@ -86,6 +91,7 @@ class ClusteredAgent:
             AgentLogger("initializing agent", topbrk=None)
         else:
             self.n_clusters = cdisk['n_clusters'].item()
+            self.cluster_centers = cdisk['cluster_centers']
             for i in range(self.n_clusters):
                 agent = DQN(**self.dqn_kw)
                 self.agents.append(agent)
@@ -97,20 +103,3 @@ class ClusteredAgent:
                 self.agents[n].memory.mem = disk['memory']
                 self.agents[n].epsilon = disk['epsilon'].item()
             AgentLogger("loaded all", topbrk=None)
-
-if __name__ == "__main__":
-    c = ClusteredAgent({})
-    states = torch.randn(5, 8)
-    targets = torch.randn(5, 1596)
-    c.init_clusters(states)
-    print(c.agents)
-    w = c.train_warmup(states, targets)
-    r, a = c.choose_actions(states)
-    print(r)
-    print(a)
-    disk = c.save_disk_repr(None, 1)
-    print(disk['1'])
-    c2 = ClusteredAgent({})
-    c2.load_disk_repr(disk, None, 1)
-    disk2 = c2.save_disk_repr(None, 1)
-    print(disk['1']['policy_state_dict']['net.0.weight'] == disk2['1']['policy_state_dict']['net.0.weight'])

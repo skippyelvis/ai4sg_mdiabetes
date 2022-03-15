@@ -151,7 +151,7 @@ class MDiabetes:
                     for sid in sids:
                         val += StatesH.state_max - states[row][sid-1]
                     targets[row,col] = val ** (1/2)
-        if self.simulate_responses:
+        if self.simulate_responses and not os.path.exists(simul_warmup_path):
             torch.save(targets, simul_warmup_path)
             MainLogger("saved warmup targets for simulations")
         return self.agent.train_warmup(clusters, states, targets)

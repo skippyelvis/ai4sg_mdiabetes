@@ -242,7 +242,7 @@ class DQN:
         # possibly update target net weights
         if idx % self.sync_steps != 0:
             return 
-        DQNLogger("syncing network weights")
+        DQNLogger("syncing network weights", topbrk=None, btbrk=None)
         self.target.load_state_dict(self.policy.state_dict())
 
     def new_optimizer(self, lr):
