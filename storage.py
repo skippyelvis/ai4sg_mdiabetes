@@ -216,7 +216,7 @@ def make_storage_group(experiment="preprod", shared_prefix="preprod", local=LOCA
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["yaml", "yaml"], "", ".yaml", 0)
     # incoming participant (ID, phone) mapping
     BatchStor = Storage(local, cloud, PRIVATE_BUCKET, CLOUD_STORAGE_FOLDER_BATCHES,
-            LOCAL_STORAGE_FOLDER, [experiment, shared_prefix], ["batch", ""], "batch", ".csv", 0)
+            LOCAL_STORAGE_FOLDER, [experiment, ""], ["batch", ""], "batch", ".csv", 0)
     # weekly participant responses (ID, q1, r1, q2, r2)
     RespStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_RESPONSES,
             LOCAL_STORAGE_FOLDER, [experiment, shared_prefix], ["responses", ""], "participant_responses_week", ".csv", 0)
