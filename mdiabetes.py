@@ -2,6 +2,7 @@ import json
 import os
 import torch
 from storage import make_storage_group, load_yaml
+from storage import Storage
 from agent import ClusteredAgent
 from content import StatesH, MessagesH, QuestionsH
 from logger import MainLogger
@@ -100,7 +101,7 @@ class MDiabetes:
             if states is None:
                 states = new_states
                 MainLogger("Initializing clusters")
-                self.agent.init_clusters(all_states)
+                self.init_agent_clusters(modify_whatsapp, all_whatsapps, all_states)
                 clusters = self.agent.assign_clusters(states)
             else:
                 states = torch.cat((states, new_states))
@@ -108,6 +109,18 @@ class MDiabetes:
                 clusters = torch.cat((clusters, new_clusters))
         timeline[:,1] += 1
         return timeline, ids, clusters, states 
+
+    def init_agent_clusters(self, mwa, all_whatsapps, all_states):
+        new_batch = Storage.load_csv("arogya_content/all_ai_participants.csv")
+        idxs = []
+        for gid, wa in new_batch:
+            wa = mwa(wa)
+            where = (wa == all_whatsapps).nonzero()
+            if where.size(0) == 0:
+                continue
+            idxs.append(where)
+        idxs = torch.tensor(idxs).long()
+        self.agent.init_clusters(all_states[idxs])
 
     def gather_simulated_participants(self):
         timeline = self.stor["timelines"].load_indexed_data(self.run_index-1)

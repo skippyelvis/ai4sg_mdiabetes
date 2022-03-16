@@ -103,7 +103,8 @@ class Storage(PathHandler):
     def load_pt(self, fname):
         return torch.load(fname)
 
-    def load_csv(self, fname):
+    @staticmethod
+    def load_csv(fname):
         data = []
         with open(fname, "r") as fp:
             rd = csv.reader(fp)
