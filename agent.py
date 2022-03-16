@@ -9,12 +9,12 @@ class ClusteredAgent:
         self.cluster_kw = cluster_kw
         self.dqn_kw = dqn_kw
         self.agents = []
-        self.n_clusters = -1
+        self.n_clusters = cluster_kw.get("n_cluster", 8)
         self.cluster_centers = None
     
     def init_clusters(self, states):
         AgentLogger("init states size:", str(states.size()))
-        clust = KMeans().fit(states)
+        clust = KMeans(self.n_clusters).fit(states)
         centers = torch.tensor(clust.cluster_centers_)
         self.n_clusters = centers.size(0)
         self.cluster_centers = centers
