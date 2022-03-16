@@ -155,9 +155,10 @@ class Storage(PathHandler):
         return data
 
     def count_files(self):
-        if self.local:
-            return super().count_files(self.local_folder)
-        return super().count_files(self.cloud_folder)
+        f = self.cloud_folder
+        if not self.cloud:
+            f = self.local_folder
+        return super().count_files(f)
 
     def delete_files(self):
         if self.local:
