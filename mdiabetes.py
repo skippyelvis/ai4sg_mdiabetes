@@ -135,25 +135,17 @@ class MDiabetes:
         return timeline, ids, states
 
     def warmup_agent(self, clusters, states):
-        simul_warmup_path = "arogya_content/preprod_baseline_questionnaires/warmup_targets.pt"
-        if self.simulate_responses and os.path.exists(simul_warmup_path):
-            targets = torch.load(simul_warmup_path)
-            MainLogger("loaded warmup targets for simulation")
-        else: 
-            targets = torch.zeros(states.size(0), MessagesH.N)
-            mesage_sids = []
-            for col in range(MessagesH.N):
-                sids = MessagesH.sid_lookup(col)
-                mesage_sids.append(sids)
-            for row in range(states.size(0)):
-                for col, sids in enumerate(mesage_sids):
-                    val = 0
-                    for sid in sids:
-                        val += StatesH.state_max - states[row][sid-1]
-                    targets[row,col] = val ** (1/2)
-        if self.simulate_responses and not os.path.exists(simul_warmup_path):
-            torch.save(targets, simul_warmup_path)
-            MainLogger("saved warmup targets for simulations")
+        targets = torch.zeros(states.size(0), MessagesH.N)
+        mesage_sids = []
+        for col in range(MessagesH.N):
+            sids = MessagesH.sid_lookup(col)
+            mesage_sids.append(sids)
+        for row in range(states.size(0)):
+            for col, sids in enumerate(mesage_sids):
+                val = 0
+                for sid in sids:
+                    val += StatesH.state_max - states[row][sid-1]
+                targets[row,col] = val ** (1/2)
         return self.agent.train_warmup(clusters, states, targets)
 
     def weekly_masks(self, timeline):
