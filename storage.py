@@ -219,10 +219,10 @@ def make_storage_group(experiment="preprod", local=LOCAL, cloud=CLOUD):
             LOCAL_STORAGE_FOLDER, [experiment, ""], ["batch", ""], "batch", ".csv", 0)
     # weekly participant responses (ID, q1, r1, q2, r2)
     RespStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_RESPONSES,
-            LOCAL_STORAGE_FOLDER, [experiment, experiment], ["responses", ""], "participant_responses_week", ".csv", 0)
+            LOCAL_STORAGE_FOLDER, [experiment, ""], ["responses", ""], "participant_responses_week", ".csv", 0)
     # weekly outbound message/question file (ID, m1, q1, m2, q2)
     MsgQsnStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_RESPONSES,
-            LOCAL_STORAGE_FOLDER, [experiment, experiment], ["outfiles", ""], "to_participants_week", ".csv", 0)
+            LOCAL_STORAGE_FOLDER, [experiment, ""], ["outfiles", ""], "to_participants_week", ".csv", 0)
     Stor = {
             "states": StateStor,
             "ids": IDStor,
