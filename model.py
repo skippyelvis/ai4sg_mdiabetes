@@ -117,7 +117,7 @@ class ConvergenceCheck:
     def __init__(self, reps=50, min_loss=.001, min_delta=.001):
         self.reps = reps
         self.min_loss = min_loss
-        self.min_delta_reps = resp
+        self.min_delta_reps = reps
         self.min_delta = min_delta
         self.c = 0
         self.c_min_delta = 0
