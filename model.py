@@ -114,10 +114,10 @@ class Model(nn.Module):
 class ConvergenceCheck:
     # helper to check if we have converged
 
-    def __init__(self, reps=50, min_loss=.001, min_delta=.001):
+    def __init__(self, reps=50, min_loss=.001, reps_min_delta=50, min_delta=.001):
         self.reps = reps
         self.min_loss = min_loss
-        self.min_delta_reps = reps
+        self.reps_min_delta = reps_min_delta
         self.min_delta = min_delta
         self.c = 0
         self.c_min_delta = 0
@@ -137,7 +137,7 @@ class ConvergenceCheck:
         self.prev_loss = l.clone()
         if self.c >= self.reps:
             return 1
-        if self.c_min_delta >= self.reps:
+        if self.c_min_delta >= self.reps_min_delta:
             return 2
         return None 
 
@@ -165,9 +165,11 @@ class DQN:
         self.convergence = convergence
 
     def check(self, train_or_warmup):
-        stop = self.convergence.get(train_or_warmup, 1)
-        minloss = self.convergence.get(f'{train_or_warmup}_min_loss', 0.5)
-        return ConvergenceCheck(stop, minloss, self.convergence["min_delta"])
+        reps = self.convergence.get(train_or_warmup, 10)
+        minloss = self.convergence.get(f'{train_or_warmup}_min_loss', 0.05)
+        reps_mindelta = self.convergence.get("reps_min_delta", 50)
+        mindelta = self.convergence.get("min_delta", .001)
+        return ConvergenceCheck(reps, minloss, reps_mindelta, mindelta)
 
     def weekly_training_update(self, transitions, run_index):
         self.memory.add(transitions)
