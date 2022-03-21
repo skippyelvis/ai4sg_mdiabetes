@@ -124,10 +124,12 @@ class ConvergenceCheck:
         self.prev_loss = None
 
     def __call__(self, l):
-        if (l - self.prev_loss).abs() / self.prev_loss < self.min_delta:
-            self.c_min_delta += 1
-        else:
-            self.c_min_delta = 0
+        if self.prev_loss is not None:
+            delt = (l-self.prev_loss).abs() / self.prev_loss
+            if delt <= self.min_delta:
+                self.c_min_delta += 1
+            else:
+                self.c_min_delta = 0
         if l < self.min_loss or torch.isnan(l):
             self.c += 1
         else:
