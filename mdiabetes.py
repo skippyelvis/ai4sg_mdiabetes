@@ -17,16 +17,16 @@ def confirm_prod_run(config):
         print("ONLY DO THIS IF YOU ABSOLUTELY ARE SUPPOSED TO")
         who  = input("- ARE YOU JACK OR THANH? [yes/no] ").lower().strip()
         when = input("- IS IT WEDNESDAY? [yes/no] ").lower().strip()
-        return who == "yes" and when == "yes"
-    return True
+        print("-" * 50)
+        if who != "yes" or when != "yes":
+            raise ValueError("Could not confirm production run")
 
 class MDiabetes:
 
     def __init__(self, config_path):
         self.config_path = config_path
         self.config = load_yaml(self.config_path)
-        if not confirm_prod_run(self.config):
-            raise ValueError("Could not confirm production run")
+        confirm_prod_run(self.config):
         self.dry_run = self.config["dry_run"]
         self.simulate_responses = self.config["simulate_responses"]
         self.simulate_participants = self.config["simulate_participants"]
