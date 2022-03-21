@@ -134,9 +134,12 @@ class ConvergenceCheck:
             self.c += 1
         else:
             self.c = 0
-        stop = self.c >= self.reps or self.c_min_delta >= self.reps
         self.prev_loss = l.clone()
-        return stop
+        if self.c >= self.reps:
+            return 1
+        if self.c_min_delta >= self.reps:
+            return 2
+        return None 
 
 class DQN:
     # dqn agent
@@ -182,8 +185,12 @@ class DQN:
             if ns % 25 == 0:
                 lv = sample_lossh[-1].item()
                 DQNLogger(" #", ns, f"/{self.num_samples}, Loss:", lv, topbrk=None, btbrk=None)
-            if check(sample_lossh[-1]):
-                DQNLogger("training convergence check passed @", ns, topbrk=None, btbrk=None)
+            ch = check(sample_lossh[-1])
+            if ch == 1:
+                DQNLogger("training minimum loss hit @", ns, topbrk=None, btbrk=None)
+                break
+            if ch == 2:
+                DQNLogger("training minimum delta hit @", ns, topbrk=None, btbrk=None)
                 break
         self.epsilon = self.epsilon * self.epsilon_decay
         self.sync_net_weights(run_index)
@@ -226,8 +233,12 @@ class DQN:
             lossh.append(loss.item())
             if warmi % 25 == 0:
                 DQNLogger(" #", warmi, ", Loss:", loss.item(), topbrk=None, btbrk=None)
-            if check(loss):
-                DQNLogger("Warmup convergence check passed @", warmi, topbrk=None, btbrk=None)
+            ch = check(loss)
+            if ch == 1:
+                DQNLogger("Warmup minimum loss hit @", warmi, topbrk=None, btbrk=None)
+                break
+            elif ch == 2:
+                DQNLogger("Warmup minimum delta hit @", warmi, topbrk=None, btbrk=None)
                 break
         self.sync_net_weights(0)
         del optimizer
