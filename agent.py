@@ -9,7 +9,7 @@ class ClusteredAgent:
         self.cluster_kw = cluster_kw
         self.dqn_kw = dqn_kw
         self.agents = []
-        self.n_clusters = cluster_kw["n_cluster"]
+        self.n_clusters = cluster_kw["n_clusters"]
         self.cluster_centers = None
     
     def init_clusters(self, states):
