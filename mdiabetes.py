@@ -8,11 +8,24 @@ from content import StatesH, MessagesH, QuestionsH
 from logger import MainLogger
 from debugai import debugai
 
+def confirm_prod_run(config):
+    dry = config["dry_run"]
+    exp = config["storage"]["experiment"]
+    if not dry and exp.lower() == "prod":
+        print("CAUTION: YOU ARE PERFORMING A PRODUCTION RUN")
+        print("ONLY DO THIS IF YOU ABSOLUTELY ARE SUPPOSED TO")
+        print("PLEASE CONFIRM YOU ARE SUPPOSED TO")
+        resp = input("ARE YOU JACK OR THANH, AND IS IT WEDNESDAY? [yes/no]")
+        return resp.lower().strip() == "yes"
+    return True
+
 class MDiabetes:
 
     def __init__(self, config_path):
         self.config_path = config_path
         self.config = load_yaml(self.config_path)
+        if not confirm_prod_run(self.config):
+            raise ValueError("Could not confirm production run")
         self.dry_run = self.config["dry_run"]
         self.simulate_responses = self.config["simulate_responses"]
         self.simulate_participants = self.config["simulate_participants"]
