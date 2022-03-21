@@ -33,3 +33,4 @@
 - to run a given experiment (specified by yaml) for 1 week:
     - `$ python3 mdiabetes.py -f input.yaml`
 - *PRODUCTION RUN*: this should only be run WEDNESDAYS by Jack/Thanh
+    - a dialogue will appear when you attempt to run an experiment with the name/storage location `prod`
