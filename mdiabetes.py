@@ -26,7 +26,7 @@ class MDiabetes:
     def __init__(self, config_path):
         self.config_path = config_path
         self.config = load_yaml(self.config_path)
-        confirm_prod_run(self.config):
+        confirm_prod_run(self.config)
         self.dry_run = self.config["dry_run"]
         self.simulate_responses = self.config["simulate_responses"]
         self.simulate_participants = self.config["simulate_participants"]
