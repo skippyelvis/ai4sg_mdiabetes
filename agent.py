@@ -24,7 +24,7 @@ class ClusteredAgent:
         AgentLogger("clusters:", self.n_clusters)
         return self.analyze_init_clusters(states)
 
-    def analyze_init_clusters(states):
+    def analyze_init_clusters(self, states):
         AgentLogger("analyzing initial clusters")
         c = self.assign_clusters(states)
         centers = torch.zeros(self.n_clusters, states.size(1))
