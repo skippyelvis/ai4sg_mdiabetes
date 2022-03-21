@@ -1,4 +1,4 @@
-dry_run: False
+dry_run: True
 simulate_responses: False
 simulate_participants: False
 N_simul_batch_1: 0
@@ -6,11 +6,12 @@ N_simul_batch_2: 0
 
 storage:
   experiment: sample
+  shared_prefix: sample
   local: True
   cloud: True
 
 cluster:
-  force_one: True
+  n_clusters: 4
 
 dqn:
   criterion: MSELoss
@@ -19,7 +20,7 @@ dqn:
     momentum: 0.9
   train_lr: .01
   warmup_lr: .05
-  warmup_iters: 300
+  warmup_iters: 400
   num_samples: 150
   sync_steps: 2
   epsilon: .2
@@ -40,7 +41,13 @@ dqn:
     batch_size: 64
 
   convergence:
-    training: 10
-    warmup: 10
-    training_min_loss: .05
-    warmup_min_loss: .05
+    training:
+      reps_min_loss: 10
+      min_loss: .05
+      reps_min_delta: 50
+      min_delta: .001
+    warmup:
+      reps_min_loss: 10
+      min_loss: .05
+      reps_min_delta: 50
+      min_delta: .001
