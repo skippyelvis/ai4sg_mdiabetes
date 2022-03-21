@@ -6,6 +6,7 @@ from storage import Storage
 from agent import ClusteredAgent
 from content import StatesH, MessagesH, QuestionsH
 from logger import MainLogger
+from debugai import debugai
 
 class MDiabetes:
 
@@ -51,7 +52,7 @@ class MDiabetes:
         if self.run_index > 1 and len(transitions) > 0:
             weekly_loss = self.agent.weekly_training_update(transitions, self.run_index)
         MainLogger("analyzing ai performance")
-        debug = self.weekly_ai_debug(ai, actions, ai_random, weekly_loss, ids, clusters, states)
+        debug = debugai(ai, actions, ai_random, weekly_loss, ids, clusters, states)
         if not self.dry_run:
             MainLogger("Saving data")
             self.stor["states"].save_data(next_states, self.run_index)
@@ -190,53 +191,6 @@ class MDiabetes:
         actions[ai] = ai_actions.clone()
         actions = torch.cat((ids.reshape(-1,1), actions.reshape(-1,1)),1)
         return actions, ai_random_mask
-
-    def weekly_ai_debug(self, mask, actions, ai_random, loss, ids, clusters, states):
-        actions = actions[:,1]
-        ids = ids[mask]
-        clusters = clusters[mask]
-        states = states[mask].clone()
-        actions = actions[mask]
-        debug = {
-                "friendly": torch.tensor([]),
-                "metrics": {},
-                "loss": loss,
-                "friendly_keys": ["id", "score", "action", "random", "cluster"]
-        }
-        if actions.size(0) == 0:
-            return debug 
-        scores = torch.full_like(actions, -1.).float()
-        weak_sids = states.argsort()
-        sids = torch.tensor([MessagesH.sid_lookup(a) for a in actions]).long()
-        for row in range(actions.size(0)):
-            if ai_random[row]:
-                continue
-            score = 0
-            for sid in sids[row]:
-                sid -= 1
-                sid_idx = (sid == weak_sids[row]).nonzero()[0]
-                score += sid_idx 
-            scores[row] = score/len(sids[row])
-        debug["friendly"] = torch.cat((
-            ids.reshape(-1,1),
-            scores.reshape(-1,1), 
-            actions.reshape(-1,1),
-            ai_random.reshape(-1,1),
-            clusters.reshape(-1,1)),1)
-        def entropy(x):
-            x = torch.cat((x, torch.tensor([1596])))
-            b = x.bincount().float()
-            b[-1] -= 1
-            b = torch.nn.functional.softmax(b, dim=0)
-            b = torch.distributions.Categorical(b).entropy()
-            return b
-        debug["metrics"] = {
-                "average_score": scores.float().mean(),
-                "n_unique": actions.unique().size(0),
-                "action_representation": actions.unique().size(0) / MessagesH.N,
-                "action_entropy": entropy(actions)
-                }
-        return debug
 
     def generate_msg_qsn(self, current_actions, timeline, states):
         # generate weekly message/question file for users
