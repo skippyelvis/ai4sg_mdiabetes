@@ -29,9 +29,10 @@ class MDiabetes:
         MainLogger("Loading DQN agent")
         self.agent = ClusteredAgent(self.config["cluster"], self.config["dqn"])
         self.agent.load_disk_repr(self.stor["dqns"], self.run_index-1)
+        cluster_debug = None
         if not self.simulate_participants:
             MainLogger("Gathering real participants")
-            timeline, ids, clusters, states = self.gather_participants()
+            timeline, ids, clusters, states, cluster_debug = self.gather_participants()
         else:
             MainLogger("Gathering simul participants")
             timeline, ids, clusters, states = self.gather_simulated_participants()
@@ -52,7 +53,7 @@ class MDiabetes:
         if self.run_index > 1 and len(transitions) > 0:
             weekly_loss = self.agent.weekly_training_update(transitions, self.run_index)
         MainLogger("analyzing ai performance")
-        debug = debugai(ai, actions, ai_random, weekly_loss, ids, clusters, states)
+        debug = debugai(ai, actions, ai_random, weekly_loss, ids, clusters, states, cluster_debug)
         if not self.dry_run:
             MainLogger("Saving data")
             self.stor["states"].save_data(next_states, self.run_index)
@@ -74,6 +75,7 @@ class MDiabetes:
         clusters = self.stor["clusters"].load_indexed_data(self.run_index-1)
         states = self.stor["states"].load_indexed_data(self.run_index-1)
         new_batch = self.stor["batches"].load_indexed_data(self.run_index)
+        cluster_debug = None
         def modify_whatsapp(x):
             x = str(x)
             x = x[len(x)-10:]
@@ -102,14 +104,14 @@ class MDiabetes:
             if states is None:
                 states = new_states
                 MainLogger("Initializing clusters")
-                self.init_agent_clusters(modify_whatsapp, all_whatsapps, all_states)
+                cluster_debug = self.init_agent_clusters(modify_whatsapp, all_whatsapps, all_states)
                 clusters = self.agent.assign_clusters(states)
             else:
                 states = torch.cat((states, new_states))
                 new_clusters = self.agent.assign_clusters(new_states)
                 clusters = torch.cat((clusters, new_clusters))
         timeline[:,1] += 1
-        return timeline, ids, clusters, states 
+        return timeline, ids, clusters, states, cluster_debug
 
     def init_agent_clusters(self, mwa, all_whatsapps, all_states):
         new_batch = Storage.load_csv("arogya_content/all_ai_participants.csv")

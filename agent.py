@@ -1,5 +1,5 @@
 import torch
-from sklearn.cluster import MeanShift as ClusterMethod
+from sklearn.cluster import KMeans as ClusterMethod
 from model import DQN
 from logger import AgentLogger
 
@@ -9,12 +9,12 @@ class ClusteredAgent:
         self.cluster_kw = cluster_kw
         self.dqn_kw = dqn_kw
         self.agents = []
-        self.n_clusters = cluster_kw.get("n_cluster", 8)
+        self.n_clusters = cluster_kw["n_cluster"]
         self.cluster_centers = None
     
     def init_clusters(self, states):
         AgentLogger("init states size:", str(states.size()))
-        clust = ClusterMethod().fit(states)
+        clust = ClusterMethod(self.n_clusters).fit(states)
         centers = torch.tensor(clust.cluster_centers_)
         self.n_clusters = centers.size(0)
         self.cluster_centers = centers
@@ -22,6 +22,21 @@ class ClusteredAgent:
             agent = DQN(**self.dqn_kw)
             self.agents.append(agent)
         AgentLogger("clusters:", self.n_clusters)
+        return self.analyze_init_clusters(states)
+
+    def analyze_init_clusters(states):
+        AgentLogger("analyzing initial clusters")
+        c = self.assign_clusters(states)
+        centers = torch.zeros(self.n_clusters, states.size(1))
+        for i in range(self.n_clusters):
+            st = states[c == i]
+            st_center = st.float().mean(0)
+            centers[i] = st_center
+        c = torch.cat((c, torch.tensor([0, self.n_clusters-1])))
+        bc = c.bincount()
+        bc[-1] -= 1
+        bc[-2] -= 2
+        return {"state_cluster_centers": centers, "cluster_counts": bc}
 
     def assign_cluster(self, state):
         d = (self.cluster_centers - state).pow(2).sum(1)

@@ -25,7 +25,7 @@ def scoreai(states, actions):
         scores[row] = score/len(sids[row])
     return scores
 
-def debugai(mask, actions, ai_random, loss, ids, clusters, states):
+def debugai(mask, actions, ai_random, loss, ids, clusters, states, init_cluster_debug):
     actions = actions[:,1]
     ids = ids[mask]
     clusters = clusters[mask]
@@ -52,4 +52,6 @@ def debugai(mask, actions, ai_random, loss, ids, clusters, states):
         "action_representation": actions.unique().size(0) / MessagesH.N,
         "action_entropy": entropy(actions),
     }
+    if init_cluster_debug is not None:
+        debug["init_cluster_metrics"] = init_cluster_debug
     return debug
