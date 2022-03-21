@@ -12,11 +12,12 @@ def confirm_prod_run(config):
     dry = config["dry_run"]
     exp = config["storage"]["experiment"]
     if not dry and exp.lower() == "prod":
+        print("-" * 50)
         print("CAUTION: YOU ARE PERFORMING A PRODUCTION RUN")
         print("ONLY DO THIS IF YOU ABSOLUTELY ARE SUPPOSED TO")
-        print("PLEASE CONFIRM YOU ARE SUPPOSED TO")
-        resp = input("ARE YOU JACK OR THANH, AND IS IT WEDNESDAY? [yes/no]")
-        return resp.lower().strip() == "yes"
+        who  = input("- ARE YOU JACK OR THANH? [yes/no] ").lower().strip()
+        when = input("- IS IT WEDNESDAY? [yes/no] ").lower().strip()
+        return who == "yes" and when == "yes"
     return True
 
 class MDiabetes:
