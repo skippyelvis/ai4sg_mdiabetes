@@ -114,17 +114,26 @@ class Model(nn.Module):
 class ConvergenceCheck:
     # helper to check if we have converged
 
-    def __init__(self, reps=50, min_loss=.001):
+    def __init__(self, reps=50, min_loss=.001, min_delta=.001):
         self.reps = reps
         self.min_loss = min_loss
+        self.min_delta_reps = resp
+        self.min_delta = min_delta
         self.c = 0
+        self.c_min_delta = 0
+        self.prev_loss = None
 
     def __call__(self, l):
+        if (l - self.prev_loss).abs() / self.prev_loss < self.min_delta:
+            self.c_min_delta += 1
+        else:
+            self.c_min_delta = 0
         if l < self.min_loss or torch.isnan(l):
             self.c += 1
         else:
             self.c = 0
-        stop = self.reps <= self.c
+        stop = self.c >= self.reps or self.c_min_delta >= self.reps
+        self.prev_loss = l.clone()
         return stop
 
 class DQN:
@@ -153,7 +162,7 @@ class DQN:
     def check(self, train_or_warmup):
         stop = self.convergence.get(train_or_warmup, 1)
         minloss = self.convergence.get(f'{train_or_warmup}_min_loss', 0.5)
-        return ConvergenceCheck(stop, minloss)
+        return ConvergenceCheck(stop, minloss, self.convergence["min_delta"])
 
     def weekly_training_update(self, transitions, run_index):
         self.memory.add(transitions)

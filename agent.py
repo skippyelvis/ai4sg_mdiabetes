@@ -2,6 +2,9 @@ import torch
 from sklearn.cluster import KMeans as ClusterMethod
 from model import DQN
 from logger import AgentLogger
+import random
+random.seed(59)
+torch.manual_seed(59)
 
 class ClusteredAgent:
 
