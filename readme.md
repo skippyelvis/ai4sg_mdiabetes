@@ -29,6 +29,7 @@
 - you can see examples in the `yaml/` directory
 
 # Running Experiments
+- experiments to be ran from `ix-dev`, not local machines
 - confirm you have cloned the repo, install requirements, setup GCS, and made a `yaml` file
 - to run a given experiment (specified by yaml) for 1 week:
     - `$ python3 mdiabetes.py -f input.yaml`
