@@ -47,7 +47,7 @@ def debugai(mask, actions, ai_random, loss, ids, clusters, states):
         ai_random.reshape(-1,1),
         clusters.reshape(-1,1)),1)
     debug["metrics"] = {
-        "average_score": scores[~ai_random_mask].float().mean(),
+        "average_score": scores[~ai_random].float().mean(),
         "n_unique": actions.unique().size(0),
         "action_representation": actions.unique().size(0) / MessagesH.N,
         "action_entropy": entropy(actions),
