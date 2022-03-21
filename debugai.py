@@ -27,7 +27,7 @@ def scoreai(states, actions):
         scores[row] = score/len(sids[row])
     return scores
 
-def debugai(mask, actions, ai_random_mask, loss, ids, clusters, states):
+def debugai(mask, actions, ai_random, loss, ids, clusters, states):
     actions = actions[:,1]
     ids = ids[mask]
     clusters = clusters[mask]
