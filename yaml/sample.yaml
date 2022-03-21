@@ -1,14 +1,14 @@
 dry_run: True
-simulate_responses: False
-simulate_participants: False
-N_simul_batch_1: 0
-N_simul_batch_2: 0
+simulate_responses: True
+simulate_participants: True
+N_simul_batch_1: 64
+N_simul_batch_2: 16
 
 storage:
   experiment: sample
   shared_prefix: sample
   local: True
-  cloud: True
+  cloud: False
 
 cluster:
   n_clusters: 4
