@@ -179,7 +179,7 @@ CLOUD_STORAGE_FOLDER_RESPONSES = "uploads"
 LOCAL = True
 CLOUD = True
 
-def make_storage_group(experiment="preprod", shared_prefix="preprod", local=LOCAL, cloud=CLOUD):
+def make_storage_group(experiment="exp", shared_prefix="exp", local=LOCAL, cloud=CLOUD):
     # participant state vectors
     StateStor = Storage(
             local,    # store data locally? 
