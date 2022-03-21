@@ -1,5 +1,5 @@
 import torch
-from sklearn.cluster import KMeans
+from sklearn.cluster import MeanShift as ClusterMethod
 from model import DQN
 from logger import AgentLogger
 
@@ -14,7 +14,7 @@ class ClusteredAgent:
     
     def init_clusters(self, states):
         AgentLogger("init states size:", str(states.size()))
-        clust = KMeans(self.n_clusters).fit(states)
+        clust = ClusterMethod().fit(states)
         centers = torch.tensor(clust.cluster_centers_)
         self.n_clusters = centers.size(0)
         self.cluster_centers = centers
