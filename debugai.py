@@ -17,8 +17,6 @@ def scoreai(states, actions):
     weak_sids = states.argsort()
     sids = torch.tensor([MessagesH.sid_lookup(a) for a in actions]).long()
     for row in range(actions.size(0)):
-        if ai_random[row]:
-            continue
         score = 0
         for sid in sids[row]:
             sid -= 1
