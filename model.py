@@ -5,7 +5,6 @@ from logger import DQNLogger
 
 DEVICE = torch.device('cpu')
 # DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-DQNLogger("device:", str(DEVICE))
 
 class Memory:
     # memory object for holding most recent transitions
