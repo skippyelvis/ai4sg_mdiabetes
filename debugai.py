@@ -5,8 +5,8 @@ from content import MessagesH
 def entropy(x):
     x = torch.cat((x, torch.tensor([0]), torch.tensor([1596])))
     b = x.bincount().float()
+    b[0] -= 1
     b[-1] -= 1
-    b[-2] -= 1
     b = torch.nn.functional.softmax(b, dim=0)
     b = torch.distributions.Categorical(b).entropy()
     return b
@@ -47,7 +47,7 @@ def debugai(mask, actions, ai_random, loss, ids, clusters, states, init_cluster_
         ai_random.reshape(-1,1),
         clusters.reshape(-1,1)),1)
     debug["metrics"] = {
-        "average_score": scores[~ai_random].float().mean(),
+        "average_ai_score": scores[~ai_random].float().mean(),
         "n_unique": actions.unique().size(0),
         "action_representation": actions.unique().size(0) / MessagesH.N,
         "action_entropy": entropy(actions),
