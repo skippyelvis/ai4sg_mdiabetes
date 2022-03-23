@@ -1,8 +1,8 @@
 import json
-import os
+from pathlib import Path
 import torch
 from storage import make_storage_group, load_yaml
-from storage import Storage
+from storage import Storage, MQDryStor, DBDryStor
 from agent import ClusteredAgent
 from content import StatesH, MessagesH, QuestionsH
 from logger import MainLogger
@@ -79,6 +79,10 @@ class MDiabetes:
             self.stor["debugs"].save_data(debug, self.run_index)
             self.stor["outfiles"].save_data(msg_qsn, self.run_index)
             self.stor["yaml"].save_data(self.config_path, self.run_index)
+        if self.dry_run:
+            Path("dry_run_check").mkdir(exist_ok=True)
+            MQDryStor.save_data(msg_qsn, self.run_index)
+            DBDryStor.save_data(debug, self.run_index)
         MainLogger("="*20)
 
     def gather_participants(self):
