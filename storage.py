@@ -179,6 +179,9 @@ CLOUD_STORAGE_FOLDER_RESPONSES = "uploads"
 LOCAL = True
 CLOUD = True
 
+MQDryStor = Storage(True, False, "", "", "dry_run_check", ["", ""], ["", ""], "mq", ".csv", 0)
+DBDryStor = Storage(True, False, "", "", "dry_run_check", ["", ""], ["", ""], "db", ".pt", 0)
+
 def make_storage_group(experiment="exp", shared_prefix="exp", local=LOCAL, cloud=CLOUD):
     # participant state vectors
     StateStor = Storage(
