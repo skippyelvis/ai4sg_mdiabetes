@@ -1,0 +1,5 @@
+this is the PRODUCTION folder
+code should only be run WEDNESDAY by JACK and DR. NGUYEN
+contains real states from participants and option to simulate
+does not simulates responses
+uploads data to GCS, stores locally
