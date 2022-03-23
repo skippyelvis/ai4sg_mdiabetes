@@ -28,7 +28,7 @@ class ClusteredAgent:
         return self.analyze_init_clusters(states)
 
     def analyze_init_clusters(self, states):
-        AgentLogger("analyzing initial clusters")
+        AgentLogger("analyzing initial clusters", btbrk=None)
         c = self.assign_clusters(states)
         centers = torch.zeros(self.n_clusters, states.size(1))
         for i in range(self.n_clusters):
@@ -37,9 +37,9 @@ class ClusteredAgent:
             centers[i] = st_center
         c = torch.cat((c, torch.tensor([0, self.n_clusters-1])))
         bc = c.bincount()
+        AgentLogger("Init cluster sizes:", bc, topbrk=None)
         bc[-1] -= 1
         bc[-2] -= 2
-        print(bc)
         return {"state_cluster_centers": centers, "cluster_counts": bc}
 
     def assign_cluster(self, state):
