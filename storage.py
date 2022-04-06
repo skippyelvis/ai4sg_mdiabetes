@@ -105,11 +105,19 @@ class Storage(PathHandler):
 
     @staticmethod
     def load_csv(fname):
-        data = []
+        def fillrow(row):
+            frow = row.copy()
+            for i, r in enumerate(row):
+                if r == "":
+                    frow[i] = "0"
+            return frow
+        data = [] 
         with open(fname, "r") as fp:
             rd = csv.reader(fp)
             for row in rd:
                 try:
+                    if "response" in fname:
+                        row = fillrow(row)
                     row = [int(r) for r in row]
                     data.append(row)
                 except:

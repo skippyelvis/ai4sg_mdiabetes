@@ -221,8 +221,8 @@ class MDiabetes:
         if previous_actions is None or msg_qsn_mask.sum().item() == 0:
             return None
         current_actions = current_actions[msg_qsn_mask]
-        file = [["ID", "M1_ID", "Q1_ID", "M2_ID", "Q2_ID"]]
-        simul_resp = [["ID", "Q1_ID", "Q1_RESP", "Q2_ID", "Q2_RESP"]]
+        file = [["PARTICIPANT_ID", "M1_ID", "Q1_ID", "M2_ID", "Q2_ID"]]
+        simul_resp = [["PARTICIPANT_ID", "Q1_ID", "Q1_RESP", "Q2_ID", "Q2_RESP"]]
         for i in range(current_actions.size(0)):
             c, p = current_actions[i][1], previous_actions[i][1]
             row_id = current_actions[i][0].long().item()
@@ -254,17 +254,21 @@ class MDiabetes:
         prev_actions = self.stor["actions"].load_indexed_data(self.run_index-2)
         prev_clusters = self.stor["clusters"].load_indexed_data(self.run_index-2)
         resp = self.stor["responses"].load_indexed_data(self.run_index-1)
+        cresp = torch.zeros(prev_actions.size(0), 5).long()
         if prev_actions is not None and resp is not None:
             if len(resp) == 0:
                 return None, None
             resp = torch.tensor(resp).long()
             if self.simulate_responses:
+                MainLogger("Shuffling simulated responses")
                 resp = resp[torch.randperm(resp.size(0))]
-            algn = torch.zeros(resp.size(0)).long()
-            for i in range(algn.size(0)):
-                algn[i] = (resp[:,0] == prev_actions[i,0]).nonzero()[0]
-            resp = resp[algn]
-        return prev_actions, prev_clusters, resp
+            for i in range(prev_actions.size(0)):
+                idx = (resp[:,0] == prev_actions[i,0]).nonzero()
+                if idx.size(0) == 0:
+                    cresp[i,0] = prev_actions[i,0]
+                else:
+                    cresp[i] = resp[idx[0]]
+        return prev_actions, prev_clusters, cresp
     
     def update_states(self, actions, clusters, responses, states, ids):
         # calculate this weeks state updates
@@ -308,4 +312,5 @@ if __name__ == "__main__":
     for i in range(args.n):
         md.main()
         time.sleep(1)
+
 

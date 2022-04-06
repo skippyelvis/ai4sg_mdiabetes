@@ -2,7 +2,9 @@ import torch
 from torch import nn, optim
 import numpy as np
 from logger import DQNLogger
+from content import MessagesH
 
+N_ACTION = MessagesH.N
 DEVICE = torch.device('cpu')
 # DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -243,19 +245,32 @@ class DQN:
         DQNLogger("Done warmup", topbrk=None)
         return torch.tensor(lossh)
 
+    def choose_action_from_qvals(self, q, samp=0.025):
+        asort = q.argsort(descending=True).flatten()
+        qf = q.flatten()
+        k = int((samp * N_ACTION) +1)
+        candidates = asort[:k]
+        choice = torch.randint(k, (1,))
+        select_pred = candidates[choice]
+        return select_pred
+
     def choose_actions(self, states):
         randoms = torch.zeros(states.size(0)).bool()
         preds = torch.zeros(states.size(0)).long()
         for row in range(states.size(0)):
             trand = torch.rand(1)
+            pred = None
+            vec = None
             if trand < self.epsilon:
-                pred = torch.randn(1, self.policy.output_shape)
+                vec = torch.randn(1, self.policy.output_shape)
+                pred = vec.detach().cpu().argmax()
                 randoms[row] = True
             else:
                 state = states[[row]]
-                pred = self.policy.predict(state)
+                vec = self.policy.predict(state)
                 randoms[row] = False
-            preds[row] = pred.detach().cpu().argmax(1)
+                pred = self.choose_action_from_qvals(vec.detach().cpu())
+            preds[row] = pred
         return (randoms, preds)
 
     def sync_net_weights(self, idx):
