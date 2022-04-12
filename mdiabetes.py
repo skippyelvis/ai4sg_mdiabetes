@@ -34,6 +34,10 @@ class MDiabetes:
         self.agent = None 
         self.run_index = -5
 
+    def show_cluster_sizes(self):
+        for agent in self.agent.agents:
+            print(agent.memory.mem['state'].size())
+
     def main(self):
         self.run_index = self.stor["states"].count_files() + 1
         MainLogger("Starting week #", self.run_index)
@@ -43,6 +47,7 @@ class MDiabetes:
         MainLogger("Loading DQN agent")
         self.agent = ClusteredAgent(self.config["cluster"], self.config["dqn"])
         self.agent.load_disk_repr(self.stor["dqns"], self.run_index-1)
+        self.show_cluster_sizes()
         cluster_debug = None
         if not self.simulate_participants:
             MainLogger("Gathering real participants")
@@ -68,6 +73,7 @@ class MDiabetes:
             weekly_loss = self.agent.weekly_training_update(transitions, self.run_index)
         MainLogger("analyzing ai performance")
         debug = debugai(ai, actions, ai_random, weekly_loss, ids, clusters, states, cluster_debug)
+        self.show_cluster_sizes()
         if not self.dry_run:
             MainLogger("Saving data")
             self.stor["states"].save_data(next_states, self.run_index)
