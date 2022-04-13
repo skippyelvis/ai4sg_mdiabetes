@@ -43,6 +43,7 @@ class Memory:
                     vec[self.repl] = telem
             vec = vec.clone()
             self.mem[k] = vec
+            # print(k, vec)
 
     def sample(self, device=None):
         if self.N == 0:
@@ -178,7 +179,9 @@ class DQN:
         DQNLogger("Starting training", btbrk=None)
         optimizer = self.new_optimizer(self.train_lr)
         for ns in range(self.num_samples):
-            sample_lossh = self.train_on_sample(optimizer)
+            sample_lossh, sample_reward = self.train_on_sample(optimizer)
+            if ns == 0:
+                print(sample_reward)
             if sample_lossh is None:
                 break
             lossh = torch.cat((lossh, sample_lossh))
@@ -196,7 +199,21 @@ class DQN:
         self.sync_net_weights(run_index)
         DQNLogger("Done training", topbrk=None)
         return lossh
-
+    
+    def check_errors(self):
+        sample = self.memory.mem
+        if sample is None:
+            return None
+        lossh = []
+        policy_qvals = self.policy(sample['state']).gather(1, sample['action'])
+        target_reward = sample['reward']
+        future = self.target.predict(sample['next_state'])
+        future = self.gamma * future.max(1)[0].reshape(-1,1)
+        target_reward += future
+        err = policy_qvals - target_reward
+        # l = torch.cat((policy_qvals, target_reward, sample['reward']),1)
+        # print(l)
+    
     def train_on_sample(self, optimizer):
         sample = self.memory.sample(self.dev)
         if sample is None:
@@ -214,7 +231,7 @@ class DQN:
         self.policy.clamp_grads()
         optimizer.step()
         lossh.append(loss.item())
-        return torch.tensor(lossh) 
+        return torch.tensor(lossh), sample['reward'] 
 
     def train_warmup(self, warmup_states, warmup_targets):
         warmup_targets = warmup_targets.to(self.dev)

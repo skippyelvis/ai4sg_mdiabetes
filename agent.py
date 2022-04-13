@@ -76,16 +76,19 @@ class ClusteredAgent:
 
     def weekly_training_update(self, transitions, index):
         AgentLogger("clustering transitions")
+        cluster_t_counts = {}
         clustered = [[] for x in range(self.n_clusters)]
         for t in transitions:
             clustered[t[0]].append(t[1:])
+            k = str(t[0])
+            cluster_t_counts[k] = cluster_t_counts.get(k,0) + 1
         loss = []
         for n in range(self.n_clusters):
             dqn = self.agents[n]
             clust = clustered[n]
             l = dqn.weekly_training_update(clust, index)
             loss.append(l)
-        return loss
+        return loss, cluster_t_counts
 
     def save_disk_repr(self, stor, index):
         cdisk = {}

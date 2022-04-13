@@ -34,12 +34,10 @@ class MDiabetes:
         self.agent = None 
         self.run_index = -5
 
-    def show_cluster_sizes(self):
-        for agent in self.agent.agents:
-            print(agent.memory.mem['state'].size())
-
     def main(self):
         self.run_index = self.stor["states"].count_files() + 1
+        if self.config['force_week']:
+            self.run_index = self.config['week_idx']
         MainLogger("Starting week #", self.run_index)
         MainLogger("Dry run:", self.dry_run)
         MainLogger("Simulated Responses:", self.simulate_responses)
@@ -47,7 +45,6 @@ class MDiabetes:
         MainLogger("Loading DQN agent")
         self.agent = ClusteredAgent(self.config["cluster"], self.config["dqn"])
         self.agent.load_disk_repr(self.stor["dqns"], self.run_index-1)
-        self.show_cluster_sizes()
         cluster_debug = None
         if not self.simulate_participants:
             MainLogger("Gathering real participants")
@@ -57,6 +54,7 @@ class MDiabetes:
             timeline, ids, clusters, states = self.gather_simulated_participants()
         MainLogger("# Participants:", states.size(0))
         weekly_loss = torch.tensor([])
+        cluster_t_counts = {}
         if self.run_index == 1:
             MainLogger("Warming up agent")
             weekly_loss = self.warmup_agent(clusters, states)
@@ -69,11 +67,15 @@ class MDiabetes:
         prev_actions, prev_clusters, responses = self.collect_responses()
         MainLogger("updating states and adding transitions")
         next_states, transitions = self.update_states(prev_actions, prev_clusters, responses, states, ids)
+        for r in transitions:
+            print(r[1])
+            print(r[3])
         if self.run_index > 1 and len(transitions) > 0:
-            weekly_loss = self.agent.weekly_training_update(transitions, self.run_index)
+            weekly_loss, cluster_t_counts = self.agent.weekly_training_update(transitions, self.run_index)
         MainLogger("analyzing ai performance")
-        debug = debugai(ai, actions, ai_random, weekly_loss, ids, clusters, states, cluster_debug)
-        self.show_cluster_sizes()
+        debug = debugai(ai, actions, ai_random, weekly_loss, ids, \
+                clusters, states, cluster_debug, cluster_t_counts)
+        MainLogger(cluster_t_counts)
         if not self.dry_run:
             MainLogger("Saving data")
             self.stor["states"].save_data(next_states, self.run_index)
@@ -260,8 +262,9 @@ class MDiabetes:
         prev_actions = self.stor["actions"].load_indexed_data(self.run_index-2)
         prev_clusters = self.stor["clusters"].load_indexed_data(self.run_index-2)
         resp = self.stor["responses"].load_indexed_data(self.run_index-1)
-        cresp = torch.zeros(prev_actions.size(0), 5).long()
+        cresp = None
         if prev_actions is not None and resp is not None:
+            cresp = torch.zeros(prev_actions.size(0), 5).long()
             if len(resp) == 0:
                 return None, None
             resp = torch.tensor(resp).long()
@@ -294,9 +297,8 @@ class MDiabetes:
             resp = responses[i, [2,4]]
             sid = torch.tensor(MessagesH.sid_lookup(action)).long()
             for j in range(resp.size(0)):
-                reward += torch.clip(resp[j] - state[sid[j]-1], 0)
-                upd = torch.clip(resp[j] - state[sid[j]-1], 0)
-                next_state[sid[j]-1] += upd / 2
+                reward += torch.clip(resp[j] - state[sid[j]-1], 0, 3)
+                next_state[sid[j]-1] = resp[j]
             next_states[idx] = next_state
             rewards[i] = reward
             if resp.sum() == 0:

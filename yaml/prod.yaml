@@ -3,6 +3,8 @@ simulate_responses: False
 simulate_participants: False
 N_simul_batch_1: 0
 N_simul_batch_2: 0
+force_week: False
+week_idx: -1
 
 storage:
   experiment: prod
