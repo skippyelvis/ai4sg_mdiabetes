@@ -85,6 +85,10 @@ class MessageHandler:
     def sid_lookup(self, action_id):
         return self.messages_from_action(action_id)[1]
 
+    def duplicate_sid(self, action_id):
+        sid = self.sid_lookup(action_id)
+        return sid[0] == sid[1]
+
     def read_timeline_map(self):
         with open(self.core_timeline_path, 'r') as fp:
             tl = fp.read().splitlines()[1:]

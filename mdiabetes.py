@@ -67,15 +67,12 @@ class MDiabetes:
         prev_actions, prev_clusters, responses = self.collect_responses()
         MainLogger("updating states and adding transitions")
         next_states, transitions = self.update_states(prev_actions, prev_clusters, responses, states, ids)
-        for r in transitions:
-            print(r[1])
-            print(r[3])
         if self.run_index > 1 and len(transitions) > 0:
             weekly_loss, cluster_t_counts = self.agent.weekly_training_update(transitions, self.run_index)
         MainLogger("analyzing ai performance")
         debug = debugai(ai, actions, ai_random, weekly_loss, ids, \
                 clusters, states, cluster_debug, cluster_t_counts)
-        MainLogger(cluster_t_counts)
+        MainLogger("transitions/cluster: ", cluster_t_counts)
         if not self.dry_run:
             MainLogger("Saving data")
             self.stor["states"].save_data(next_states, self.run_index)
@@ -91,7 +88,7 @@ class MDiabetes:
             Path("dry_run_check").mkdir(exist_ok=True)
             MQDryStor.save_data(msg_qsn, self.run_index)
             DBDryStor.save_data(debug, self.run_index)
-        MainLogger("="*20)
+        MainLogger("="*5, "SUCCESS", "="*5)
 
     def gather_participants(self):
         # load previous timeline, ids, and states
@@ -264,6 +261,7 @@ class MDiabetes:
         resp = self.stor["responses"].load_indexed_data(self.run_index-1)
         cresp = None
         if prev_actions is not None and resp is not None:
+            MainLogger("handling responses")
             cresp = torch.zeros(prev_actions.size(0), 5).long()
             if len(resp) == 0:
                 return None, None
@@ -290,16 +288,20 @@ class MDiabetes:
             update_idxs[i] = (ids == actions[i,0]).nonzero()[0]
         rewards = torch.zeros(actions.size(0)).long()
         for i, idx in enumerate(update_idxs):
+            # TODO: duplicate elem --> max(reward), otherise --> average
             state = states[idx]
             action = actions[i,1]
+            crewards = [None, None]
             reward = 0
             next_state = next_states[idx].clone()
             resp = responses[i, [2,4]]
             sid = torch.tensor(MessagesH.sid_lookup(action)).long()
+            duplicate_elem = sid[0] == sid[1]
             for j in range(resp.size(0)):
-                reward += torch.clip(resp[j] - state[sid[j]-1], 0, 3)
+                crewards[j] = torch.clip(resp[j] - state[sid[j]-1], 0, 3)
                 next_state[sid[j]-1] = resp[j]
             next_states[idx] = next_state
+            reward = sum(crewards)/len(crewards)
             rewards[i] = reward
             if resp.sum() == 0:
                 continue

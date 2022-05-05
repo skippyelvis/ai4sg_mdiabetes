@@ -80,13 +80,13 @@ class ClusteredAgent:
         clustered = [[] for x in range(self.n_clusters)]
         for t in transitions:
             clustered[t[0]].append(t[1:])
-            k = str(t[0])
+            k = t[0].item()
             cluster_t_counts[k] = cluster_t_counts.get(k,0) + 1
         loss = []
         for n in range(self.n_clusters):
             dqn = self.agents[n]
             clust = clustered[n]
-            l = dqn.weekly_training_update(clust, index)
+            l = dqn.weekly_training_update(n, clust, index)
             loss.append(l)
         return loss, cluster_t_counts
 

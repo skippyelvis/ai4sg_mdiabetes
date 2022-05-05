@@ -170,7 +170,7 @@ class DQN:
         cv = self.convergence[train_or_warmup]
         return ConvergenceCheck(**cv)
 
-    def weekly_training_update(self, transitions, run_index):
+    def weekly_training_update(self, cn, transitions, run_index):
         self.memory.add(transitions)
         lossh = torch.tensor([])
         if self.memory.N == 0:
@@ -179,9 +179,9 @@ class DQN:
         DQNLogger("Starting training", btbrk=None)
         optimizer = self.new_optimizer(self.train_lr)
         for ns in range(self.num_samples):
-            sample_lossh, sample_reward = self.train_on_sample(optimizer)
             if ns == 0:
-                print(sample_reward)
+                self.check_errors(cn)
+            sample_lossh = self.train_on_sample(optimizer)
             if sample_lossh is None:
                 break
             lossh = torch.cat((lossh, sample_lossh))
@@ -200,19 +200,21 @@ class DQN:
         DQNLogger("Done training", topbrk=None)
         return lossh
     
-    def check_errors(self):
+    def check_errors(self, cn):
         sample = self.memory.mem
         if sample is None:
             return None
         lossh = []
-        policy_qvals = self.policy(sample['state']).gather(1, sample['action'])
-        target_reward = sample['reward']
+        with torch.no_grad():
+            policy_qvals = self.policy(sample['state']).gather(1, sample['action'])
+        target_reward = sample['reward'].clone()
         future = self.target.predict(sample['next_state'])
         future = self.gamma * future.max(1)[0].reshape(-1,1)
         target_reward += future
-        err = policy_qvals - target_reward
-        # l = torch.cat((policy_qvals, target_reward, sample['reward']),1)
-        # print(l)
+        l = torch.cat((policy_qvals, target_reward, sample['reward']),1)
+        import os
+        os.makedirs("check_memory_errors", exist_ok=True)
+        torch.save(l, "check_memory_errors/" + str(cn)+".pt")
     
     def train_on_sample(self, optimizer):
         sample = self.memory.sample(self.dev)
@@ -222,7 +224,7 @@ class DQN:
         criterion = self.new_criterion()
         optimizer.zero_grad()
         policy_qvals = self.policy(sample['state']).gather(1, sample['action'])
-        target_reward = sample['reward']
+        target_reward = sample['reward'].clone()
         future = self.target.predict(sample['next_state'])
         future = self.gamma * future.max(1)[0].reshape(-1,1)
         target_reward += future
@@ -231,7 +233,7 @@ class DQN:
         self.policy.clamp_grads()
         optimizer.step()
         lossh.append(loss.item())
-        return torch.tensor(lossh), sample['reward'] 
+        return torch.tensor(lossh) 
 
     def train_warmup(self, warmup_states, warmup_targets):
         warmup_targets = warmup_targets.to(self.dev)
@@ -263,10 +265,16 @@ class DQN:
         return torch.tensor(lossh)
 
     def choose_action_from_qvals(self, q, samp=0.025):
-        asort = q.argsort(descending=True).flatten()
-        qf = q.flatten()
-        k = int((samp * N_ACTION) +1)
-        candidates = asort[:k]
+        # randomly select an action from the top samp% of q
+        asort = q.argsort(descending=True).flatten()  # argsort --> indexes
+        duplicate_mask = torch.zeros_like(asort).bool()
+        i = 0
+        for a in asort:
+            duplicate_mask[i] = MessagesH.duplicate_sid(a).item()
+            i += 1
+        asort = asort[~duplicate_mask]
+        k = int((samp * asort.shape[0]) +1)                 # cutoff index
+        candidates = asort[:k]                        # sample action slice
         choice = torch.randint(k, (1,))
         select_pred = candidates[choice]
         return select_pred
