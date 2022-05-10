@@ -40,7 +40,7 @@ class MDiabetes:
 
     def main(self):
         self.run_index = self.stor["states"].count_files() + 1
-        if self.config['force_week']:
+        if self.config.get('force_week', False):
             self.run_index = self.config['week_idx']
         MainLogger("Starting week #", self.run_index)
         MainLogger("Dry run:", self.dry_run)
