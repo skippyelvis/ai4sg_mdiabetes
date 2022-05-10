@@ -4,9 +4,13 @@ import torch
 from storage import make_storage_group, load_yaml
 from storage import Storage, MQDryStor, DBDryStor
 from agent import ClusteredAgent
-from content import StatesH, MessagesH, QuestionsH
+from content import StatesHandler, MessageHandler, QuestionHandler
 from logger import MainLogger
 from debugai import debugai
+
+StatesH = StatesHandler()
+MessagesH = MessageHandler()
+QuestionsH = QuestionHandler()
 
 def confirm_prod_run(config):
     dry = config["dry_run"]
@@ -66,7 +70,8 @@ class MDiabetes:
         MainLogger("Checking for responses")
         prev_actions, prev_clusters, responses = self.collect_responses()
         MainLogger("updating states and adding transitions")
-        next_states, transitions = self.update_states(prev_actions, prev_clusters, responses, states, ids)
+        next_states, transitions = self.update_states(prev_actions, prev_clusters, \
+                                                      responses, states, ids)
         if self.run_index > 1 and len(transitions) > 0:
             weekly_loss, cluster_t_counts = self.agent.weekly_training_update(transitions, self.run_index)
         MainLogger("analyzing ai performance")

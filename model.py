@@ -2,7 +2,9 @@ import torch
 from torch import nn, optim
 import numpy as np
 from logger import DQNLogger
-from content import MessagesH
+from content import MessageHandler
+
+MessagesH = MessageHandler()
 
 N_ACTION = MessagesH.N
 DEVICE = torch.device('cpu')

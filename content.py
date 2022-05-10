@@ -11,9 +11,10 @@ class MessageHandler:
 
     def __init__(self, path='arogya_content/mDiabetes-content-final.xlsx',
             core_timeline_path='arogya_content/core_message_timeline_map.csv',
-            sheet='mDiabetes Content-AI'):
-        self.path = path
-        self.core_timeline_path = core_timeline_path
+            sheet='mDiabetes Content-AI',
+            path_prepend=''):
+        self.path = path_prepend + path
+        self.core_timeline_path = path_prepend + core_timeline_path
         self.sheet = sheet
         self.action_space = self.create_action_space()
         self.N = self.action_space.shape[0]
@@ -104,8 +105,9 @@ class QuestionHandler:
     # handles access to the question bank
 
     def __init__(self, path='arogya_content/mDiabetes-content.xlsx',
-            sheet_name='mDiabetes Questions-AI(English)'):
-        self.path = path
+            sheet_name='mDiabetes Questions-AI(English)',
+            path_prepend=''):
+        self.path = path_prepend + path
         self.sheet_name = sheet_name
         self.N = 0
         self.question_map = self.create_question_map()
@@ -114,6 +116,7 @@ class QuestionHandler:
         # read in and create in memory the dictionary to map
         # from state element IDs --> question IDs
         questions = pd.read_excel(self.path, sheet_name=self.sheet_name)
+        print(questions)
         questions = questions[["ID"]]
         questions["ID"] = questions["ID"].astype(int)
         self.N = len(questions)
@@ -255,10 +258,10 @@ class StatesHandler:
         return whatsapps, states
 
 
-if __name__ != "__main__":
-    StatesH = StatesHandler()
-    MessagesH = MessageHandler()
-    QuestionsH = QuestionHandler()
+# if __name__ != "__main__":
+    # StatesH = StatesHandler()
+    # MessagesH = MessageHandler()
+    # QuestionsH = QuestionHandler()
 
 if __name__ == "__main__":
     import sys

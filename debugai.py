@@ -1,5 +1,7 @@
 import torch
-from content import MessagesH
+from content import MessageHandler
+
+MessagesH = MessageHandler()
 
 # calculate the entropy of messages sent
 def entropy(x):
