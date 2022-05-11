@@ -116,7 +116,6 @@ class QuestionHandler:
         # read in and create in memory the dictionary to map
         # from state element IDs --> question IDs
         questions = pd.read_excel(self.path, sheet_name=self.sheet_name)
-        print(questions)
         questions = questions[["ID"]]
         questions["ID"] = questions["ID"].astype(int)
         self.N = len(questions)

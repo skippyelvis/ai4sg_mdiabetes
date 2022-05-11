@@ -292,20 +292,29 @@ class MDiabetes:
         for i in range(actions.size(0)):
             update_idxs[i] = (ids == actions[i,0]).nonzero()[0]
         rewards = torch.zeros(actions.size(0)).long()
+        updated = torch.zeros_like(ids).bool()
         for i, idx in enumerate(update_idxs):
             # TODO: duplicate elem --> max(reward), otherise --> average
             state = states[idx]
+            updated[idx] = True
             action = actions[i,1]
             crewards = [None, None]
             reward = 0
             next_state = next_states[idx].clone()
+            print("*****")
+            print(next_state)
+            print(ids[idx])
             resp = responses[i, [2,4]]
+            print(responses[i, [0,2,4]])
             sid = torch.tensor(MessagesH.sid_lookup(action)).long()
+            print(sid)
             duplicate_elem = sid[0] == sid[1]
             for j in range(resp.size(0)):
                 crewards[j] = torch.clip(resp[j] - state[sid[j]-1], 0, 3)
                 next_state[sid[j]-1] = resp[j]
             next_states[idx] = next_state
+            print(next_state)
+            print("*****")
             reward = sum(crewards)/len(crewards)
             rewards[i] = reward
             if resp.sum() == 0:
