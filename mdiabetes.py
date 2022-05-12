@@ -308,10 +308,10 @@ class MDiabetes:
             print(responses[i, [0,2,4]])
             sid = torch.tensor(MessagesH.sid_lookup(action)).long()
             print(sid)
-            duplicate_elem = sid[0] == sid[1]
             for j in range(resp.size(0)):
                 crewards[j] = torch.clip(resp[j] - state[sid[j]-1], 0, 3)
-                next_state[sid[j]-1] = resp[j]
+                if resp[j] != 0:
+                    next_state[sid[j]-1] = resp[j]
             next_states[idx] = next_state
             print(next_state)
             print("*****")
@@ -332,8 +332,8 @@ if __name__ == "__main__":
     parser.add_argument("-n", help="number of weeks to run", type=int, default=1)
     args = parser.parse_args()
 
-    md = MDiabetes(args.f)
     for i in range(args.n):
+        md = MDiabetes(args.f)
         md.main()
         time.sleep(1)
 
