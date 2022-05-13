@@ -107,6 +107,7 @@ class QuestionHandler:
     def __init__(self, path='arogya_content/mDiabetes-content.xlsx',
             sheet_name='mDiabetes Questions-AI(English)',
             path_prepend=''):
+        self.path_pre = path_prepend
         self.path = path_prepend + path
         self.sheet_name = sheet_name
         self.N = 0
@@ -119,13 +120,21 @@ class QuestionHandler:
         questions = questions[["ID"]]
         questions["ID"] = questions["ID"].astype(int)
         self.N = len(questions)
-        with open('arogya_content/question_state_element_map.json', 'r') as fp:
+        with open(self.path_pre+'arogya_content/question_state_element_map.json', 'r') as fp:
             qmap = json.loads(fp.read())
         question_map = {int(k): [] for k in qmap.keys()}
         for k, v in qmap.items():
             for qid in v:
                 question_map[int(k)].append(qid)
         return question_map
+    
+    def sid_lookup(self, qs):
+        sids = [[],[]]
+        for qi, q in enumerate(qs):
+            for k in self.question_map.keys():
+                if q in self.question_map[k]:
+                    sids[qi].append(k)
+        return sids
 
     def random_questions(self, state_elems):
         qs1 = self.question_map[state_elems[0]]
@@ -262,12 +271,3 @@ class StatesHandler:
     # MessagesH = MessageHandler()
     # QuestionsH = QuestionHandler()
 
-if __name__ == "__main__":
-    import sys
-    states = StatesHandler(sys.argv[1])
-    m = states.qhs[-1].mat
-    print(m.columns)
-    w, s = states.compute_states()
-    print(w)
-    print(s)
-    print(s.shape)
