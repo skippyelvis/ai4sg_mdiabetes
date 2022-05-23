@@ -1,0 +1,55 @@
+dry_run: True
+simulate_responses: False
+simulate_participants: False
+N_simul_batch_1: 0
+N_simul_batch_2: 0
+force_week: True
+week_idx: 5
+
+storage:
+  experiment: prod
+  shared_prefix: ""
+  local: True
+  cloud: True
+
+cluster:
+  n_clusters: 3
+
+dqn:
+  criterion: MSELoss
+  optimizer: SGD
+  optimizer_kw:
+    momentum: 0.9
+  train_lr: .01
+  warmup_lr: .05
+  warmup_iters: 400
+  num_samples: 150
+  sync_steps: 2
+  epsilon: .2
+  epsilon_decay: .9
+  gamma: .8
+
+  model:
+    input_shape: 8
+    hidden_shape: 128
+    output_shape: 1596
+    hidden_layers: 1
+    hidden_activation: LeakyReLU
+    hidden_activation_kw:
+      negative_slope: 0.2
+
+  memory:
+    capacity: 128
+    batch_size: 64
+
+  convergence:
+    training:
+      reps_min_loss: 10
+      min_loss: .1
+      reps_min_delta: 50
+      min_delta: .001
+    warmup:
+      reps_min_loss: 10
+      min_loss: .05
+      reps_min_delta: 50
+      min_delta: .001
