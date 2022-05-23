@@ -85,8 +85,10 @@ class Storage(PathHandler):
         cloudf = self.filename(self.cloud_folder, index)
         if self.local and not self.cloud:
             # StorageLogger("loading local", localf)
+            print("local: ", localf)
             return self.load_local(localf)
         # StorageLogger("loading cloud", cloudf)
+        print("cloud: ", cloudf)
         return self.load_cloud(cloudf, localf)
 
     def save_local(self, data, fname):
@@ -190,7 +192,7 @@ CLOUD = True
 MQDryStor = Storage(True, False, "", "", "dry_run_check", ["", ""], ["", ""], "mq", ".csv", 0)
 DBDryStor = Storage(True, False, "", "", "dry_run_check", ["", ""], ["", ""], "db", ".pt", 0)
 
-def make_storage_group(experiment="exp", shared_prefix="exp", local=LOCAL, cloud=CLOUD):
+def make_storage_group(experiment="exp", shared_prefix="exp", local=LOCAL, cloud=CLOUD, read_actions=""):
     # participant state vectors
     StateStor = Storage(
             local,    # store data locally? 
@@ -204,6 +206,8 @@ def make_storage_group(experiment="exp", shared_prefix="exp", local=LOCAL, cloud
             ".pt",   # file extension to save as
             0        # filename offset
     )
+    if read_actions is None or read_actions == "":
+        read_actions = experiment
     # participant IDs
     IDStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_AI, 
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["ids", "ids"], "", ".pt", 0)
@@ -212,7 +216,7 @@ def make_storage_group(experiment="exp", shared_prefix="exp", local=LOCAL, cloud
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["clusters", "clusters"], "", ".pt", 0)
     # weekly (ID, action) mapping
     ActionStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_AI,
-            LOCAL_STORAGE_FOLDER, [experiment, experiment], ["actions", "actions"], "", ".pt", 0)
+            LOCAL_STORAGE_FOLDER, [read_actions, read_actions], ["actions", "actions"], "", ".pt", 0)
     # timeline of participants (ID, weeks_since_join)
     TLStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_AI,
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["timeline", "timeline"], "", ".pt", 0)
@@ -221,7 +225,7 @@ def make_storage_group(experiment="exp", shared_prefix="exp", local=LOCAL, cloud
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["dqn", "dqn"], "", ".pt", 0)
     # debugging info each week (ai metrics)
     DebugStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_AI,
-            LOCAL_STORAGE_FOLDER, [experiment, experiment], ["debug", "debug"], "", ".pt", 0)
+            LOCAL_STORAGE_FOLDER, [read_actions, experiment], ["debug", "debug"], "", ".pt", 0)
     # where to store yaml hyperparameter file
     YamlStor = Storage(local, cloud, PUBLIC_BUCKET, CLOUD_STORAGE_FOLDER_AI,
             LOCAL_STORAGE_FOLDER, [experiment, experiment], ["yaml", "yaml"], "", ".yaml", 0)

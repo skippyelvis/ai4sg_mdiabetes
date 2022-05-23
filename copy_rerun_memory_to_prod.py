@@ -3,7 +3,7 @@ import os
 
 path = "/home/users/jwolf5/mdiabetes/PROD/local_storage"
 prod_path = f"{path}/prod/dqn"
-rern_path = f"{path}/rerun/dqn"
+rern_path = f"{path}/behavior_dataset/dqn"
 
 for file in os.listdir(rern_path):
     # load up the rerun memory and prod memory

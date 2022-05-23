@@ -83,7 +83,9 @@ class MDiabetes:
             self.stor["states"].save_data(next_states, self.run_index)
             self.stor["ids"].save_data(ids, self.run_index)
             self.stor["clusters"].save_data(clusters, self.run_index)
-            self.stor["actions"].save_data(actions, self.run_index)
+            if "read_actions" not in self.config['storage']:
+                MainLogger("Saving actions")
+                self.stor["actions"].save_data(actions, self.run_index)
             self.stor["timelines"].save_data(timeline, self.run_index)
             self.agent.save_disk_repr(self.stor["dqns"], self.run_index)
             self.stor["debugs"].save_data(debug, self.run_index)
@@ -212,6 +214,12 @@ class MDiabetes:
         # optin group gets random core action
         # core group needs scheduled action
         # ai group gets input to dqn
+        if "read_actions" in self.config['storage']:
+            MainLogger("Reading actions")
+            last = self.stor["debugs"].load_indexed_data(self.run_index)
+            actions = last["friendly"][:,2]
+            ai_random_mask = last["friendly"][:,3]
+            return actions, ai_random_mask
         actions = torch.zeros(states.size(0)).long()
         optin_actions = MessagesH.random_core_actions(optin.sum().item())
         core_actions = MessagesH.scheduled_core_actions(timeline[core])
@@ -306,13 +314,15 @@ class MDiabetes:
             print(ids[idx])
             resp = responses[i, [2,4]]
             print(responses[i, [0,2,4]])
+            questions = responses[i,[1,3]]
+            print(questions)
             sid = torch.tensor(MessagesH.sid_lookup(action)).long()
             print(sid)
             for j in range(resp.size(0)):
                 crewards[j] = torch.clip(resp[j] - state[sid[j]-1], 0, 3)
                 if resp[j] != 0:
                     next_state[sid[j]-1] = resp[j]
-            next_states[idx] = next_state
+            next_states[idx] = next_state.clone()
             print(next_state)
             print("*****")
             reward = sum(crewards)/len(crewards)
