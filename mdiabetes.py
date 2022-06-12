@@ -12,7 +12,9 @@ StatesH = StatesHandler()
 MessagesH = MessageHandler()
 QuestionsH = QuestionHandler()
 
-def confirm_prod_run(config):
+def confirm_prod_run(config, override):
+    if override:
+        return
     dry = config["dry_run"]
     exp = config["storage"]["experiment"]
     if not dry and exp.lower() == "prod":
@@ -27,10 +29,10 @@ def confirm_prod_run(config):
 
 class MDiabetes:
 
-    def __init__(self, config_path):
+    def __init__(self, config_path, prod_confirm=False):
         self.config_path = config_path
         self.config = load_yaml(self.config_path)
-        confirm_prod_run(self.config)
+        confirm_prod_run(self.config, prod_confirm)
         self.dry_run = self.config["dry_run"]
         self.simulate_responses = self.config["simulate_responses"]
         self.simulate_participants = self.config["simulate_participants"]
@@ -302,29 +304,20 @@ class MDiabetes:
         rewards = torch.zeros(actions.size(0)).long()
         updated = torch.zeros_like(ids).bool()
         for i, idx in enumerate(update_idxs):
-            # TODO: duplicate elem --> max(reward), otherise --> average
             state = states[idx]
             updated[idx] = True
             action = actions[i,1]
             crewards = [None, None]
             reward = 0
             next_state = next_states[idx].clone()
-            print("*****")
-            print(next_state)
-            print(ids[idx])
             resp = responses[i, [2,4]]
-            print(responses[i, [0,2,4]])
             questions = responses[i,[1,3]]
-            print(questions)
             sid = torch.tensor(MessagesH.sid_lookup(action)).long()
-            print(sid)
             for j in range(resp.size(0)):
                 crewards[j] = torch.clip(resp[j] - state[sid[j]-1], 0, 3)
                 if resp[j] != 0:
                     next_state[sid[j]-1] = resp[j]
             next_states[idx] = next_state.clone()
-            print(next_state)
-            print("*****")
             reward = sum(crewards)/len(crewards)
             rewards[i] = reward
             if resp.sum() == 0:
@@ -340,11 +333,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", help="yaml config file", required=True)
     parser.add_argument("-n", help="number of weeks to run", type=int, default=1)
+    parser.add_argument("--prod", "-p", dest="prod", action="store_true")
     args = parser.parse_args()
 
     for i in range(args.n):
-        md = MDiabetes(args.f)
+        md = MDiabetes(args.f, args.prod)
         md.main()
         time.sleep(1)
+    print("mdiabetes done :)")
 
 
