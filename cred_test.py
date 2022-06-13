@@ -53,7 +53,7 @@ try:
 except:
     print("failed to download")
 try:
-    upload_blob("participant-files", "cred_test.py", "uploads/jack_test.py")
+    upload_blob("participant-files", "cred_test.py", "uploads/sarah_test.py")
 except Exception as e:
     print("failed to upload")
     print(e)
