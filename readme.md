@@ -20,7 +20,7 @@
     - download the `env` file from the `mdiabetes-prod-analysis-data` bucket of the `mdiabetes-prod-analysis` Google Cloud project
 
 ### `arogya_content/` directory
-- sent via email
+- download from the `mdiabetes-prod-analysis-data` bucket
 - contains message/question banks, questionnaires, etc
 
 ### yaml input file
@@ -28,9 +28,8 @@
 - you can see examples in the `yaml/` directory
 
 # Running Experiments
-- experiments to be ran from `ix-dev`, not local machines
 - confirm you have cloned the repo, install requirements, setup GCS, and made a `yaml` file
 - to run a given experiment (specified by yaml) for 1 week:
     - `$ python3 mdiabetes.py -f input.yaml`
-- *PRODUCTION RUN*: this should only be run WEDNESDAYS by Jack/Thanh
-    - a dialogue will appear when you attempt to run an experiment with the name/storage location `prod`
+- *PRODUCTION RUN*: this is automated via the `systemd` service and timer units
+    - verify success by checking for file in bucket
