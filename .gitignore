@@ -2,7 +2,7 @@ arogya_content
 **/__pycache__
 **/*.pt
 **/*.csv
-.env
+env
 meeting-notes/
 .ipynb_checkpoints
 analytics.ipynb
