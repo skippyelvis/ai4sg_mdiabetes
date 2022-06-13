@@ -8,7 +8,7 @@ import shutil
 import yaml
 from logger import StorageLogger
 
-load_dotenv()
+load_dotenv("env")
 
 class PathHandler:
 
