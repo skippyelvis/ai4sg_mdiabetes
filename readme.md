@@ -2,6 +2,7 @@
 
 ### GCS setup
 - you will need a GCS developer access key in the form of a JSON file
+- download the `json` key file from the `mdiabetes-prod-analysis-data` bucket
 - save this file on your computer, ex `/home/user/keys/mdiabetes-gcs-key.json`
 - export the path to this file as `$GOOGLE_APPLICATION_CREDENTIALS`
     - for example, in you `~/.bashrc` or `~/.profile` add the following line:
