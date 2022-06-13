@@ -8,7 +8,7 @@
         `export GOOGLE_APPLICATION_CREDENTIALS=$HOME/keys/mdiabetes-gcs-key.json`
 - using developer keys is a security measure so no unknown/unauthenticated parties can write to our GCS buckets
 
-### `.env` file
+### `env` file
 - there is some private data associated with the code that cannot be uploaded to git
 - the code is expecting these variables to be defined in a `.env` file
 - for example, the GCS bucket names because they are public
@@ -17,8 +17,7 @@
     - `MDIABETED_GCS_BUCKET_PUBLIC`: name of public bucket to store all other files
 - you need do the following
     - clone the repo
-    - rename `.env_sample` to `.env`: `ai4sg_mdiabetes$ cp .env_sample .env`
-    - open `.env` and replace the bucket names with their real world names
+    - download the `env` file from the `mdiabetes-prod-analysis-data` bucket of the `mdiabetes-prod-analysis` Google Cloud project
 
 ### `arogya_content/` directory
 - sent via email
