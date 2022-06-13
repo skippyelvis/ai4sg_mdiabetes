@@ -24,6 +24,12 @@
 - download from the `mdiabetes-prod-analysis-data` bucket
 - contains message/question banks, questionnaires, etc
 
+### `local_storage/` directory
+- download the `uo-ai-storage` folder from the `participant-files` bucket and save locally as `local_storage`
+- from the `uploads` folder of the same bucket, 
+	- download all the `to_participants` files into a folder `local_storage/prod/outfiles`
+	- download all the `participant_responses` files into a folder `local_storage/prod/responses`
+
 ### yaml input file
 - each experiment has many hyperparameters which are defined in a `.yaml` file
 - you can see examples in the `yaml/` directory
