@@ -1,4 +1,5 @@
 # Setup to Run Experiments
+along with cloning this repo, you will need to download the relevant private files
 
 ### GCS setup
 - you will need a GCS developer access key in the form of a JSON file
@@ -11,11 +12,8 @@
 
 ### `env` file
 - there is some private data associated with the code that cannot be uploaded to git
-- the code is expecting these variables to be defined in a `.env` file
+- the code is expecting these variables to be defined in a `env` file
 - for example, the GCS bucket names because they are public
-- this repository contains an `.env_sample` which exports two variables:
-    - `MDIABETES_GCS_BUCKET_PRIVATE`: name of private bucket to store participant batches 
-    - `MDIABETED_GCS_BUCKET_PUBLIC`: name of public bucket to store all other files
 - you need do the following
     - clone the repo
     - download the `env` file from the `mdiabetes-prod-analysis-data` bucket of the `mdiabetes-prod-analysis` Google Cloud project
