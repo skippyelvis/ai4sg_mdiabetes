@@ -7,7 +7,8 @@ import os
 from collections import OrderedDict
 
 class MessageHandler:
-    # handle action space/messages
+    ''' helper class to handle processing the raw message files and 
+    making them into an action space for our model to select from '''
 
     def __init__(self, path='arogya_content/mDiabetes-content-final.xlsx',
             core_timeline_path='arogya_content/core_message_timeline_map.csv',
@@ -30,6 +31,8 @@ class MessageHandler:
         return mat
 
     def create_action_space(self):
+        # create an action space of every 2-combination of messages
+        # one action is two messages
         mat = self.read_and_process()
         iscore = lambda x: mat.loc[x]['Core']
         elemid = lambda x: mat.loc[x]['StateElementID']
@@ -47,6 +50,7 @@ class MessageHandler:
         return pd.DataFrame(action_space).T
 
     def random_core_actions(self, n):
+        # sometimes, we need to choose a preselected "core" messages
         core = self.action_space[(self.action_space['M1_CORE'] == True) & \
                 (self.action_space['M2_CORE'] == True)]
         replace = False
@@ -73,6 +77,7 @@ class MessageHandler:
         return actions
 
     def messages_from_action(self, action_id):
+        # map an action to its messages and state elements
         if isinstance(action_id, torch.Tensor):
             action_id = action_id.item()
         row = self.action_space.loc[action_id]

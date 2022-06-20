@@ -22,10 +22,12 @@ class Memory:
 
     @property
     def N(self):
+        # how many elements we have in memory now
         vec = self.mem.get(self.keys[0])
         return 0 if vec is None else vec.size(0)
 
     def add(self, transitions):
+        # add a transition to memory, maybe replacing an old one
         for tr in transitions:
             repl = self.N >= self.capacity
             self._add(tr, repl)
@@ -48,6 +50,7 @@ class Memory:
             # print(k, vec)
 
     def sample(self, device=None):
+        # return a sample of transitions from memory for training
         if self.N == 0:
             return None
         batch_size = min(self.batch_size, self.N)

@@ -7,6 +7,7 @@ random.seed(59)
 torch.manual_seed(59)
 
 class ClusteredAgent:
+    ''' our message selection agent is a cluster of deep q-networks '''
 
     def __init__(self, cluster_kw, dqn_kw):
         self.cluster_kw = cluster_kw
@@ -16,6 +17,7 @@ class ClusteredAgent:
         self.cluster_centers = None
     
     def init_clusters(self, states):
+        # initialize the cluster centers and create the models
         AgentLogger("init states size:", str(states.size()))
         clust = ClusterMethod(self.n_clusters).fit(states)
         centers = torch.tensor(clust.cluster_centers_)
@@ -43,6 +45,8 @@ class ClusteredAgent:
         return {"state_cluster_centers": centers, "cluster_counts": bc}
 
     def assign_cluster(self, state):
+        # find the cluster a member belongs to
+        # cluster assignment only happens once, they do not change over time
         d = (self.cluster_centers - state).pow(2).sum(1)
         return d.argmin().item()
 
@@ -54,6 +58,7 @@ class ClusteredAgent:
         return torch.tensor(clusters).long()
 
     def train_warmup(self, clusters, states, targets):
+        # run the warmup training for each cluster
         loss = []
         for n in range(self.n_clusters):
             mask = clusters == n
@@ -62,12 +67,16 @@ class ClusteredAgent:
         return loss
 
     def choose_actions(self, clusters, states):
+        # perform action selection for each cluster
         if not isinstance(clusters, torch.Tensor):
             clusters = torch.tensor(clusters)
         clusters = clusters.long()
+        # record the action IDs and which ones were random
         randoms = torch.zeros(states.size(0)).bool()
         actions = torch.zeros(states.size(0)).long()
         for n in range(self.n_clusters):
+            # use each cluster agent to choose messages for
+            #  participants of that cluster
             mask = clusters == n
             random, act = self.agents[n].choose_actions(states[mask])
             randoms[mask] = random
@@ -75,15 +84,19 @@ class ClusteredAgent:
         return randoms, actions, clusters
 
     def weekly_training_update(self, transitions, index):
+        # perform the weekly training update for each cluster
         AgentLogger("clustering transitions")
         cluster_t_counts = {}
+        # different transitions for different clusters
         clustered = [[] for x in range(self.n_clusters)]
         for t in transitions:
-            clustered[t[0]].append(t[1:])
+            # the first elem of the transition is the cluster ID
+            clustered[t[0]].append(t[1:]) 
             k = t[0].item()
             cluster_t_counts[k] = cluster_t_counts.get(k,0) + 1
         loss = []
         for n in range(self.n_clusters):
+            # train each DQN on its transitions
             dqn = self.agents[n]
             clust = clustered[n]
             l = dqn.weekly_training_update(n, clust, index)
@@ -91,6 +104,7 @@ class ClusteredAgent:
         return loss, cluster_t_counts
 
     def save_disk_repr(self, stor, index):
+        # dump a representation of this model to disk
         cdisk = {}
         cdisk['n_clusters'] = torch.tensor(self.n_clusters)
         cdisk['cluster_centers'] = self.cluster_centers
@@ -108,6 +122,7 @@ class ClusteredAgent:
         return stor.save_data(cdisk, index)
 
     def load_disk_repr(self, stor, index):
+        # load a representation of this model from disk
         cdisk = stor.load_indexed_data(index)
         AgentLogger("Loading agent", btbrk=None)
         if cdisk is None:
